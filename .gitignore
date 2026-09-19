@@ -1,17 +1,13 @@
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
 .venv/
+venv/
+*.egg-info/
 
-# Environment variables
+# Environment
 .env
 
-# Node
-node_modules/
-.next/
-
-# macOS
-.DS_Store
-
-# IDE
-.vscode/
+# BloodIQ runtime data (local only, never committed)
+data/bloodiq.db
+data/sample_reports/*.pdf

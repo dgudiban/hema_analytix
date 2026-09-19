@@ -1,0 +1,19 @@
+# Postgres (with pgvector for the future RAG knowledge base).
+# Start it with:  docker compose up -d
+# Then run the app with:
+#   DATABASE_URL=postgresql://bloodiq:bloodiq@localhost:5432/bloodiq uvicorn app.main:app --reload
+# (from inside backend/). Without DATABASE_URL the app uses SQLite instead.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: bloodiq
+      POSTGRES_USER: bloodiq
+      POSTGRES_PASSWORD: bloodiq
+    ports:
+      - "5432:5432"
+    volumes:
+      - bloodiq_pgdata:/var/lib/postgresql/data
+
+volumes:
+  bloodiq_pgdata:

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BloodIQ — Blood Report Analytics</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🩸 BloodIQ</div>
+    <div id="api-status" class="api-status" title="Backend connectivity">● connecting…</div>
+  </header>
+
+  <main class="container">
+    <section class="card" id="upload-card">
+      <h2>Upload a blood report</h2>
+      <p class="muted">PDF only. Text is extracted locally; nothing is sent anywhere unless you ask for an AI explanation.</p>
+      <form id="upload-form">
+        <input type="file" id="file-input" accept="application/pdf,.pdf" required />
+        <button type="submit" id="upload-btn">Upload &amp; Analyze</button>
+      </form>
+      <div id="progress" class="muted hidden">Working…</div>
+      <div id="upload-note" class="note hidden"></div>
+    </section>
+
+    <section class="card hidden" id="results-card">
+      <div class="results-head">
+        <h2 id="report-title">Report</h2>
+        <button id="explain-btn" class="secondary">Explain with AI</button>
+      </div>
+      <p id="summary" class="summary"></p>
+
+      <div id="ai-panel" class="ai-panel hidden">
+        <h3>AI explanation</h3>
+        <p id="ai-text"></p>
+      </div>
+
+      <table id="results-table">
+        <thead>
+          <tr>
+            <th>Biomarker</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Reference range</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </section>
+
+    <section class="card" id="trends-card">
+      <h2>Trends</h2>
+      <p class="muted">Pick a biomarker to see how it changed across your reports.</p>
+      <form id="trend-form">
+        <select id="trend-select" aria-label="Biomarker"></select>
+        <button type="submit" class="secondary">Show trend</button>
+      </form>
+      <div id="trend-result" class="hidden">
+        <p id="trend-direction" class="trend-direction"></p>
+        <canvas id="trend-chart" width="680" height="280"></canvas>
+        <p id="trend-note" class="muted small"></p>
+      </div>
+      <p id="trend-empty" class="muted">No trend data yet — upload at least one report first.</p>
+    </section>
+
+    <section class="card" id="history-card">
+      <h2>Recent reports</h2>
+      <ul id="history-list" class="history"></ul>
+    </section>
+
+    <footer class="disclaimer">
+      BloodIQ is educational and is <strong>not a substitute for professional
+      medical advice</strong>. Reference ranges shown are the ones printed on
+      each lab report — always confirm with your report and consult a qualified
+      healthcare professional.
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --green: #34d399;
+  --red: #f87171;
+  --amber: #fbbf24;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #0b1220;
+  border-bottom: 1px solid #1e293b;
+}
+
+.brand { font-size: 1.4rem; font-weight: 700; }
+
+.api-status { font-size: 0.85rem; color: var(--muted); }
+.api-status.ok { color: var(--green); }
+.api-status.bad { color: var(--red); }
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.card h2 { margin-top: 0; }
+
+.muted { color: var(--muted); }
+.hidden { display: none !important; }
+
+form {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+button {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #082f49;
+}
+
+button.secondary {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+button:disabled { opacity: 0.5; cursor: wait; }
+
+input[type="file"] { color: var(--muted); }
+
+.note {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: #451a03;
+  color: var(--amber);
+  font-size: 0.9rem;
+}
+
+.results-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.summary { color: var(--muted); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid #334155;
+}
+
+th { color: var(--muted); font-weight: 600; }
+
+.pill {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pill.normal { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+.pill.high   { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+.pill.low    { background: rgba(251, 191, 36, 0.15);  color: var(--amber); }
+.pill.unknown { background: rgba(148, 163, 184, 0.15); color: var(--muted); }
+
+.src-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent);
+  cursor: help;
+}
+
+#trend-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 0.5rem 0 1rem;
+}
+
+select {
+  background: #0b1220;
+  color: var(--text);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.95rem;
+  max-width: 100%;
+}
+
+.trend-direction {
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.trend-direction.improving { color: var(--green); }
+.trend-direction.declining { color: var(--red); }
+.trend-direction.stable { color: var(--muted); }
+
+#trend-chart {
+  width: 100%;
+  max-width: 680px;
+  height: auto;
+  background: #0b1220;
+  border-radius: 8px;
+}
+
+.small { font-size: 0.8rem; }
+
+.ai-panel {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-left: 3px solid var(--accent);
+  background: #0b1220;
+  border-radius: 0 8px 8px 0;
+  white-space: pre-wrap;
+}
+
+.ai-panel h3 { margin-top: 0; color: var(--accent); }
+
+.history { list-style: none; padding: 0; margin: 0; }
+
+.history li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #334155;
+}
+
+.history a { color: var(--accent); text-decoration: none; }
+.history a:hover { text-decoration: underline; }
+
+.disclaimer {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 1rem 0 2rem;
+}

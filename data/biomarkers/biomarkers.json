@@ -1,0 +1,667 @@
+{
+  "disclaimer": "BloodIQ is educational and is not a substitute for professional medical advice. Always consult a qualified healthcare professional about your lab results.",
+  "implementation_notes": {
+    "Reference ranges": "Use the reference range printed on the user's laboratory report whenever available. Do not hard-code one universal range for all users.",
+    "Units": "Store the original reported unit. Normalize units only when the conversion is validated and the analyte is truly comparable.",
+    "Aliases": "Map aliases to a standard biomarker ID while retaining the original extracted test name for traceability.",
+    "Status": "For ordinary numeric tests: value < reference_low = LOW; value > reference_high = HIGH; otherwise NORMAL. Handle missing/open-ended ranges explicitly.",
+    "Trend analysis": "Compare measurements only when the standardized biomarker, analyte subtype, and units are compatible.",
+    "Calculated biomarkers": "Non-HDL cholesterol and transferrin saturation may be calculated when required inputs are available; retain whether the value was reported or calculated.",
+    "Special analytes": "RDW subtypes, reticulocyte count formats, vitamin D analytes, calcium types, CRP types, and folate types must not be silently merged.",
+    "Safety": "BloodIQ is educational. It must not diagnose, prescribe treatment, or replace professional medical advice."
+  },
+  "biomarkers": [
+    {
+      "biomarker_id": "BM001",
+      "standard_name": "Hemoglobin",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Hb",
+        "HGB",
+        "Hemoglobin"
+      ],
+      "typical_units": "g/dL",
+      "description": "Protein in red blood cells that carries oxygen",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range; preserve original unit."
+    },
+    {
+      "biomarker_id": "BM002",
+      "standard_name": "RBC",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "RBC Count",
+        "Red Blood Cell Count"
+      ],
+      "typical_units": "million/µL",
+      "description": "Red blood cell count",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM003",
+      "standard_name": "WBC",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "WBC Count",
+        "White Blood Cell Count"
+      ],
+      "typical_units": "K/µL",
+      "description": "White blood cell count",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM004",
+      "standard_name": "Hematocrit",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "HCT",
+        "Hematocrit"
+      ],
+      "typical_units": "%",
+      "description": "Percentage of blood volume occupied by red blood cells",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM005",
+      "standard_name": "MCV",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Mean Corpuscular Volume"
+      ],
+      "typical_units": "fL",
+      "description": "Average red blood cell volume",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM006",
+      "standard_name": "MCH",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Mean Corpuscular Hemoglobin"
+      ],
+      "typical_units": "pg",
+      "description": "Average hemoglobin amount per red blood cell",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM007",
+      "standard_name": "MCHC",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Mean Corpuscular Hemoglobin Concentration"
+      ],
+      "typical_units": "g/dL",
+      "description": "Average hemoglobin concentration in red blood cells",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM008",
+      "standard_name": "Platelets",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "PLT",
+        "Platelet Count",
+        "Platelets"
+      ],
+      "typical_units": "K/µL",
+      "description": "Blood components involved in clot formation",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM009",
+      "standard_name": "RDW",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "RDW-CV",
+        "Red Cell Distribution Width"
+      ],
+      "typical_units": "%",
+      "description": "Measure of variation in red blood cell size",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "RDW-CV and RDW-SD are distinct; do not merge them without identifying the subtype."
+    },
+    {
+      "biomarker_id": "BM010",
+      "standard_name": "Reticulocyte Count",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Retic Count",
+        "Reticulocytes",
+        "Retic %"
+      ],
+      "typical_units": "%",
+      "description": "Measure of immature red blood cells",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "May be reported as percentage or absolute count; store subtype and unit."
+    },
+    {
+      "biomarker_id": "BM011",
+      "standard_name": "Glucose",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "Blood Glucose",
+        "Fasting Glucose",
+        "Serum Glucose"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Blood glucose concentration",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Capture fasting/random context when present."
+    },
+    {
+      "biomarker_id": "BM012",
+      "standard_name": "HbA1c",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "A1C",
+        "A1c",
+        "Glycated Hemoglobin"
+      ],
+      "typical_units": "%",
+      "description": "Measurement reflecting average blood glucose over a longer period",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve reported unit and assay context if provided."
+    },
+    {
+      "biomarker_id": "BM013",
+      "standard_name": "Creatinine",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "Creat",
+        "Serum Creatinine"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Waste product used in kidney function assessment",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM014",
+      "standard_name": "BUN",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "Blood Urea Nitrogen",
+        "Urea Nitrogen"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Measure of nitrogen in blood from urea",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM015",
+      "standard_name": "Sodium",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "Na",
+        "Sodium"
+      ],
+      "typical_units": "mmol/L",
+      "description": "Major electrolyte involved in fluid and nerve balance",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM016",
+      "standard_name": "Potassium",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "K",
+        "Potassium"
+      ],
+      "typical_units": "mmol/L",
+      "description": "Electrolyte important for cellular and cardiac function",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM017",
+      "standard_name": "Chloride",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "Cl",
+        "Chloride"
+      ],
+      "typical_units": "mmol/L",
+      "description": "Electrolyte involved in fluid and acid-base balance",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM018",
+      "standard_name": "CO2 / Bicarbonate",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "CO2",
+        "Total CO2",
+        "Bicarbonate",
+        "HCO3"
+      ],
+      "typical_units": "mmol/L",
+      "description": "Measure related to bicarbonate and acid-base status",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Terminology varies by lab; preserve the original reported analyte name."
+    },
+    {
+      "biomarker_id": "BM019",
+      "standard_name": "Calcium",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "Ca",
+        "Total Calcium",
+        "Serum Calcium"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Mineral involved in bone, muscle, nerve, and cellular function",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Distinguish total calcium from ionized calcium."
+    },
+    {
+      "biomarker_id": "BM020",
+      "standard_name": "Magnesium",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "Mg",
+        "Serum Magnesium"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Mineral involved in numerous cellular and neuromuscular processes",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM021",
+      "standard_name": "ALT",
+      "category": "Liver / Protein",
+      "common_aliases": [
+        "SGPT",
+        "Alanine Aminotransferase",
+        "Alanine Transaminase"
+      ],
+      "typical_units": "U/L",
+      "description": "Enzyme commonly measured in liver evaluation",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM022",
+      "standard_name": "AST",
+      "category": "Liver / Protein",
+      "common_aliases": [
+        "SGOT",
+        "Aspartate Aminotransferase",
+        "Aspartate Transaminase"
+      ],
+      "typical_units": "U/L",
+      "description": "Enzyme found in multiple tissues and commonly measured in liver evaluation",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM023",
+      "standard_name": "ALP",
+      "category": "Liver / Protein",
+      "common_aliases": [
+        "Alkaline Phosphatase",
+        "ALKP"
+      ],
+      "typical_units": "U/L",
+      "description": "Enzyme associated with liver, bile ducts, and bone",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Interpret in context; preserve report-specific range."
+    },
+    {
+      "biomarker_id": "BM024",
+      "standard_name": "Total Bilirubin",
+      "category": "Liver / Protein",
+      "common_aliases": [
+        "Bilirubin Total",
+        "TBIL",
+        "Total Bili"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Bilirubin measurement used in evaluation of liver and red-cell breakdown processes",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Distinguish total from direct/conjugated bilirubin."
+    },
+    {
+      "biomarker_id": "BM025",
+      "standard_name": "Albumin",
+      "category": "Liver / Protein",
+      "common_aliases": [
+        "Serum Albumin",
+        "ALB"
+      ],
+      "typical_units": "g/dL",
+      "description": "Major blood protein involved in fluid balance and transport",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM026",
+      "standard_name": "Total Protein",
+      "category": "Liver / Protein",
+      "common_aliases": [
+        "Protein Total",
+        "Total Serum Protein"
+      ],
+      "typical_units": "g/dL",
+      "description": "Combined concentration of major blood proteins",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM027",
+      "standard_name": "Total Cholesterol",
+      "category": "Lipid",
+      "common_aliases": [
+        "Cholesterol",
+        "Total Cholesterol",
+        "TC"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Total cholesterol concentration",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM028",
+      "standard_name": "LDL",
+      "category": "Lipid",
+      "common_aliases": [
+        "LDL-C",
+        "LDL Cholesterol",
+        "Low-Density Lipoprotein"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Low-density lipoprotein cholesterol",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "May be calculated or directly measured; preserve method if available."
+    },
+    {
+      "biomarker_id": "BM029",
+      "standard_name": "HDL",
+      "category": "Lipid",
+      "common_aliases": [
+        "HDL-C",
+        "HDL Cholesterol",
+        "High-Density Lipoprotein"
+      ],
+      "typical_units": "mg/dL",
+      "description": "High-density lipoprotein cholesterol",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM030",
+      "standard_name": "Triglycerides",
+      "category": "Lipid",
+      "common_aliases": [
+        "TG",
+        "Triglyceride",
+        "Triglycerides"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Type of lipid measured in blood",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve fasting status when reported."
+    },
+    {
+      "biomarker_id": "BM031",
+      "standard_name": "Non-HDL Cholesterol",
+      "category": "Lipid",
+      "common_aliases": [
+        "Non-HDL-C",
+        "Non HDL Cholesterol"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Total cholesterol minus HDL cholesterol",
+      "supports_trend": true,
+      "calculation_type": "Calculated or direct",
+      "special_handling": "If calculated, derive only when total cholesterol and HDL are available and compatible."
+    },
+    {
+      "biomarker_id": "BM032",
+      "standard_name": "TSH",
+      "category": "Thyroid",
+      "common_aliases": [
+        "Thyroid Stimulating Hormone",
+        "Thyrotropin"
+      ],
+      "typical_units": "µIU/mL",
+      "description": "Hormone used in evaluation of thyroid function",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Interpret with thyroid context; preserve assay and reference range when available."
+    },
+    {
+      "biomarker_id": "BM033",
+      "standard_name": "Free T4",
+      "category": "Thyroid",
+      "common_aliases": [
+        "FT4",
+        "Free Thyroxine",
+        "Free T4"
+      ],
+      "typical_units": "ng/dL",
+      "description": "Unbound thyroxine measurement used in thyroid evaluation",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Interpret alongside TSH when appropriate; preserve assay-specific range."
+    },
+    {
+      "biomarker_id": "BM034",
+      "standard_name": "Ferritin",
+      "category": "Iron Studies",
+      "common_aliases": [
+        "Serum Ferritin",
+        "Ferritin"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Protein associated with stored iron",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Interpret in clinical context; ferritin can be affected by inflammation."
+    },
+    {
+      "biomarker_id": "BM035",
+      "standard_name": "Serum Iron",
+      "category": "Iron Studies",
+      "common_aliases": [
+        "Iron",
+        "Serum Iron",
+        "Fe"
+      ],
+      "typical_units": "µg/dL",
+      "description": "Measured iron concentration in serum",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve fasting/timing context when reported."
+    },
+    {
+      "biomarker_id": "BM036",
+      "standard_name": "TIBC",
+      "category": "Iron Studies",
+      "common_aliases": [
+        "Total Iron Binding Capacity",
+        "TIBC"
+      ],
+      "typical_units": "µg/dL",
+      "description": "Measure of the blood's iron-binding capacity",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM037",
+      "standard_name": "Transferrin Saturation",
+      "category": "Iron Studies",
+      "common_aliases": [
+        "TSAT",
+        "Transferrin Sat",
+        "Iron Saturation"
+      ],
+      "typical_units": "%",
+      "description": "Percentage of transferrin iron-binding capacity occupied by iron",
+      "supports_trend": true,
+      "calculation_type": "Calculated or direct",
+      "special_handling": "May be reported or calculated from serum iron and TIBC; retain source/method."
+    },
+    {
+      "biomarker_id": "BM038",
+      "standard_name": "Vitamin D",
+      "category": "Vitamins / Nutrition",
+      "common_aliases": [
+        "Vit D",
+        "25-OH Vitamin D",
+        "25-Hydroxy Vitamin D",
+        "25(OH)D"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Measurement of vitamin D status",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Specify analyte if available; do not merge with other vitamin D metabolites."
+    },
+    {
+      "biomarker_id": "BM039",
+      "standard_name": "Vitamin B12",
+      "category": "Vitamins / Nutrition",
+      "common_aliases": [
+        "B12",
+        "Cobalamin",
+        "Vitamin B-12"
+      ],
+      "typical_units": "pg/mL",
+      "description": "Vitamin involved in blood-cell formation and nervous-system function",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM040",
+      "standard_name": "Folate",
+      "category": "Vitamins / Nutrition",
+      "common_aliases": [
+        "Folic Acid",
+        "Serum Folate",
+        "Vitamin B9"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Vitamin involved in DNA synthesis and blood-cell formation",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Distinguish serum folate from RBC folate when reported."
+    },
+    {
+      "biomarker_id": "BM041",
+      "standard_name": "CRP",
+      "category": "Inflammation",
+      "common_aliases": [
+        "C-Reactive Protein",
+        "C Reactive Protein"
+      ],
+      "typical_units": "mg/L",
+      "description": "Inflammation-associated protein measured in blood",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Distinguish standard CRP from high-sensitivity CRP (hs-CRP)."
+    },
+    {
+      "biomarker_id": "BM042",
+      "standard_name": "ESR",
+      "category": "Inflammation",
+      "common_aliases": [
+        "Erythrocyte Sedimentation Rate",
+        "Sed Rate"
+      ],
+      "typical_units": "mm/hr",
+      "description": "Rate at which red blood cells settle in a test tube",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Reference ranges can vary with context; preserve report-specific range."
+    },
+    {
+      "biomarker_id": "BM043",
+      "standard_name": "Phosphate",
+      "category": "Minerals / Metabolic",
+      "common_aliases": [
+        "Phosphorus",
+        "Phosphate",
+        "Serum Phosphate"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Mineral involved in bone, energy, and cellular processes",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Distinguish phosphate from other phosphorus measurements when applicable."
+    },
+    {
+      "biomarker_id": "BM044",
+      "standard_name": "Uric Acid",
+      "category": "Minerals / Metabolic",
+      "common_aliases": [
+        "Urate",
+        "Serum Uric Acid",
+        "Uric Acid"
+      ],
+      "typical_units": "mg/dL",
+      "description": "End product of purine metabolism measured in blood",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Preserve original unit and reference range."
+    },
+    {
+      "biomarker_id": "BM045",
+      "standard_name": "eGFR",
+      "category": "Kidney / Metabolic",
+      "common_aliases": [
+        "Estimated GFR",
+        "eGFR",
+        "GFR"
+      ],
+      "typical_units": "mL/min/1.73 m²",
+      "description": "Estimated measure of kidney filtration",
+      "supports_trend": true,
+      "calculation_type": "Calculated/Reported",
+      "special_handling": "May be reported with an equation or calculation method; do not treat as an ordinary analyte reference range."
+    }
+  ]
+}

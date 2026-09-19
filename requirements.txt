@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+PyMuPDF
+pandas
+sqlalchemy
+pytest
+httpx
+python-multipart
+requests
+openpyxl
+psycopg2-binary
