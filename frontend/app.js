@@ -119,7 +119,7 @@ async function handleExplain() {
     text.textContent = lastAiExplanation;
   } else {
     text.textContent =
-      "AI explanation unavailable. Set the GEMINI_API_KEY environment variable " +
+      "AI explanation unavailable. Set the GROQ_API_KEY environment variable " +
       "(free tier) or run Ollama locally (ollama pull llama3.1, then ollama serve), " +
       "then upload again. The rule-based summary above still applies.";
   }

@@ -29,7 +29,7 @@ python -m eval.run_eval    # zero-cost run; chat falls back deterministically
 With a live model (optional; same checks, real answers recorded):
 
 ```bash
-GEMINI_API_KEY=... python -m eval.run_eval
+GROQ_API_KEY=... python -m eval.run_eval
 ```
 
 ## What the chat checks mean

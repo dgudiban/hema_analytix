@@ -94,8 +94,9 @@ http://127.0.0.1:8000/docs.
    results across report dates and returns `improving` / `declining` / `stable`
    (5% tolerance band), excluding points with incompatible units.
 6. **Explain (optional)** — `POST /api/reports/{id}/analyze` also tries an AI
-   explanation: Google Gemini (free tier, needs `GEMINI_API_KEY`) → local Ollama
-   → falls back to the rule-based summary. Never required.
+   explanation: Groq (free tier, needs `GROQ_API_KEY`) → Google Gemini
+   (needs `GEMINI_API_KEY`) → local Ollama → falls back to the rule-based
+   summary. Never required.
 7. **View** — the static frontend (`frontend/`, no build step) shows a results
    table with the report's reference range, status pills, `HGB → Hemoglobin`
    traceability, `calculated` badges, a canvas trend chart, and the AI panel.
@@ -162,7 +163,7 @@ the `Retriever` protocol (pgvector is provisioned in `docker-compose.yml`).
 
 **Hybrid chat** (`POST /api/chat`) — detects mentioned biomarkers → pulls your
 deterministic results + trend direction → retrieves KB chunks → asks the LLM
-(Gemini free tier → local Ollama) to answer using *only* that context, with a
+(Groq free tier → Gemini → local Ollama) to answer using *only* that context, with a
 strict safety system prompt. Every answer gets the educational disclaimer
 appended in code, and `numbers_grounded` flags any number not present in the
 context. Works without an LLM too (deterministic fallback listing your facts).
@@ -198,11 +199,11 @@ rule-based summary still works.
 
 **Render** — the repo includes `render.yaml`. Push to GitHub, create a new Web
 Service from the repo, Render reads `render.yaml` automatically (free plan).
-Add `GEMINI_API_KEY` in the dashboard's environment variables if you want AI.
+Add `GROQ_API_KEY` in the dashboard's environment variables if you want AI.
 
 **Hugging Face Spaces** — create a Space with the *Docker* SDK, push this repo,
 and it builds from the included `Dockerfile` (serves on port 7860). Add
-`GEMINI_API_KEY` as a Space secret for AI explanations.
+`GROQ_API_KEY` as a Space secret for AI explanations.
 
 > Note: Render's free tier sleeps after inactivity (first request wakes it, slowly).
 > Both options are fine for a demo/final project, not for real clinical traffic.

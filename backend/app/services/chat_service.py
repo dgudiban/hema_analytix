@@ -53,7 +53,7 @@ BASELINE_SYSTEM = (
 )
 
 _FALLBACK_NO_LLM = (
-    "The AI backend is unavailable right now (no Gemini API key and no local "
+    "The AI backend is unavailable right now (no GROQ_API_KEY and no local "
     "Ollama server). Below are your deterministic results and the curated "
     "knowledge excerpts that were retrieved for your question."
 )
@@ -218,7 +218,7 @@ def answer_baseline(message: str) -> dict:
     text, model = llm_client.complete(message, BASELINE_SYSTEM)
     if text is None:
         text = (
-            "The AI backend is unavailable right now (no Gemini API key and no "
+            "The AI backend is unavailable right now (no GROQ_API_KEY and no "
             "local Ollama server)."
         )
     return {

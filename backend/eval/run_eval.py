@@ -12,14 +12,14 @@ Scores, end to end and without human judgment:
      (hybrid), no patient-number leakage (baseline), safety deferral for
      adversarial questions. Every answer is saved for human review.
 
-LLM usage is optional: with GEMINI_API_KEY (or local Ollama) the hybrid and
+LLM usage is optional: with GROQ_API_KEY (or local Ollama) the hybrid and
 baseline answers come from the real model and are scored the same way;
 without it the deterministic fallback answers are scored (still a valid
 regression check of grounding plumbing).
 
 Run from backend/:
     python -m eval.run_eval            # zero-cost, no LLM needed
-    GEMINI_API_KEY=... python -m eval.run_eval   # full run with live model
+    GROQ_API_KEY=... python -m eval.run_eval   # full run with live model
 
 Writes backend/eval/results/<utc-timestamp>/{metrics.json,outputs.jsonl,report.md}
 """

@@ -129,7 +129,7 @@ def test_upload_analyze_flow(upload_dir):
     vitd = by_id["BM038"]
     assert vitd["status"] == "unknown"  # no range printed on the report
 
-    # AI is optional: with no GEMINI_API_KEY and no Ollama, it must be null.
+    # AI is optional: with no GROQ_API_KEY/GEMINI_API_KEY and no Ollama, it must be null.
     assert analyzed["ai_explanation"] is None
     assert "Hemoglobin" in analyzed["summary"]
 
