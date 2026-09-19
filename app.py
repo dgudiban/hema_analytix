@@ -11,6 +11,7 @@ import os
 import sys
 
 import gradio as gr
+import spaces
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend"))
 
@@ -27,8 +28,20 @@ _root_mounts = [
 for _m in _root_mounts:
     fastapi_app.routes.remove(_m)
 
+@spaces.GPU
+def _gradio_status() -> str:
+    """Status endpoint for the /gradio demo.
+
+    Decorated with @spaces.GPU so the Space satisfies the ZeroGPU hardware
+    requirement (at least one GPU-decorated function must be detected at
+    startup). The function itself is a trivial status check; the product UI
+    and API are served by the FastAPI app.
+    """
+    return "BloodIQ API is running. The full app UI is served at the Space root (/)."
+
+
 demo = gr.Interface(
-    fn=lambda: "BloodIQ API is running. The full app UI is served at the Space root (/).",
+    fn=_gradio_status,
     inputs=[],
     outputs="text",
     title="BloodIQ",
