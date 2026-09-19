@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.gitignore
+data/bloodiq.db
+data/sample_reports/
+backend/eval/results/
+backend/eval/fixtures/
+*.log
+.env

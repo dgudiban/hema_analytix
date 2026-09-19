@@ -5,12 +5,11 @@ services:
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
     envVars:
       # PYTHONPATH so `app` resolves from the project root on Render.
       - key: PYTHONPATH
         value: backend
-    plan: free
-    envVars:
       # Optional: paste your Gemini API key in the Render dashboard.
       # AI explanations degrade gracefully to the rule-based summary without it.
       - key: GEMINI_API_KEY
