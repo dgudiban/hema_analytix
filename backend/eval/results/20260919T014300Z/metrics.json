@@ -1,0 +1,880 @@
+{
+  "generated_at_utc": "2026-09-19T01:42:59+00:00",
+  "n_fixture_reports": 12,
+  "extraction": {
+    "detection": {
+      "tp": 23,
+      "fp": 0,
+      "fn": 2,
+      "precision": 1.0,
+      "recall": 0.92,
+      "f1": 0.9583
+    },
+    "field_accuracy": {
+      "value": 1.0,
+      "unit": 1.0,
+      "ref_low": 1.0,
+      "ref_high": 1.0,
+      "status": 1.0
+    },
+    "per_report": [
+      {
+        "report": "R01",
+        "detection": {
+          "tp": 5,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM001",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM001",
+              "value": 11.2,
+              "unit": "g/dL",
+              "ref_low": 12.0,
+              "ref_high": 15.5,
+              "status": "LOW",
+              "source": "reported"
+            },
+            "got": {
+              "value": 11.2,
+              "unit": "g/dL",
+              "ref_low": 12.0,
+              "ref_high": 15.5,
+              "status": "LOW"
+            }
+          },
+          {
+            "biomarker_id": "BM003",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM003",
+              "value": 6500.0,
+              "unit": "/uL",
+              "ref_low": 4000.0,
+              "ref_high": 11000.0,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 6500.0,
+              "unit": "/uL",
+              "ref_low": 4000.0,
+              "ref_high": 11000.0,
+              "status": "NORMAL"
+            }
+          },
+          {
+            "biomarker_id": "BM027",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM027",
+              "value": 210.0,
+              "unit": "mg/dL",
+              "ref_low": 125.0,
+              "ref_high": 200.0,
+              "status": "HIGH",
+              "source": "reported"
+            },
+            "got": {
+              "value": 210.0,
+              "unit": "mg/dL",
+              "ref_low": 125.0,
+              "ref_high": 200.0,
+              "status": "HIGH"
+            }
+          },
+          {
+            "biomarker_id": "BM029",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM029",
+              "value": 55.0,
+              "unit": "mg/dL",
+              "ref_low": 40.0,
+              "ref_high": 60.0,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 55.0,
+              "unit": "mg/dL",
+              "ref_low": 40.0,
+              "ref_high": 60.0,
+              "status": "NORMAL"
+            }
+          },
+          {
+            "biomarker_id": "BM038",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM038",
+              "value": 18.0,
+              "unit": "ng/mL",
+              "ref_low": 30.0,
+              "ref_high": 100.0,
+              "status": "LOW",
+              "source": "reported"
+            },
+            "got": {
+              "value": 18.0,
+              "unit": "ng/mL",
+              "ref_low": 30.0,
+              "ref_high": 100.0,
+              "status": "LOW"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R02",
+        "detection": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM001",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM001",
+              "value": 13.0,
+              "unit": "g/dL",
+              "ref_low": 12.0,
+              "ref_high": 15.5,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 13.0,
+              "unit": "g/dL",
+              "ref_low": 12.0,
+              "ref_high": 15.5,
+              "status": "NORMAL"
+            }
+          },
+          {
+            "biomarker_id": "BM011",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM011",
+              "value": 99.0,
+              "unit": "mg/dL",
+              "ref_low": 70.0,
+              "ref_high": 100.0,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 99.0,
+              "unit": "mg/dL",
+              "ref_low": 70.0,
+              "ref_high": 100.0,
+              "status": "NORMAL"
+            }
+          },
+          {
+            "biomarker_id": "BM027",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM027",
+              "value": 190.0,
+              "unit": "mg/dL",
+              "ref_low": 125.0,
+              "ref_high": 200.0,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 190.0,
+              "unit": "mg/dL",
+              "ref_low": 125.0,
+              "ref_high": 200.0,
+              "status": "NORMAL"
+            }
+          },
+          {
+            "biomarker_id": "BM038",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM038",
+              "value": 25.0,
+              "unit": "ng/mL",
+              "ref_low": null,
+              "ref_high": null,
+              "status": "unknown",
+              "source": "reported"
+            },
+            "got": {
+              "value": 25.0,
+              "unit": "ng/mL",
+              "ref_low": null,
+              "ref_high": null,
+              "status": "unknown"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R03",
+        "detection": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 2
+        },
+        "missed": [
+          "BM019",
+          "BM041"
+        ],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM009",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM009",
+              "value": 14.1,
+              "unit": "%",
+              "ref_low": 11.5,
+              "ref_high": 14.5,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 14.1,
+              "unit": "%",
+              "ref_low": 11.5,
+              "ref_high": 14.5,
+              "status": "NORMAL"
+            }
+          },
+          {
+            "biomarker_id": "BM038",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM038",
+              "value": 22.0,
+              "unit": "ng/mL",
+              "ref_low": 30.0,
+              "ref_high": 100.0,
+              "status": "LOW",
+              "source": "reported"
+            },
+            "got": {
+              "value": 22.0,
+              "unit": "ng/mL",
+              "ref_low": 30.0,
+              "ref_high": 100.0,
+              "status": "LOW"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R04",
+        "detection": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM028",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM028",
+              "value": 118.0,
+              "unit": "mg/dL",
+              "ref_low": null,
+              "ref_high": null,
+              "status": "unknown",
+              "source": "reported"
+            },
+            "got": {
+              "value": 118.0,
+              "unit": "mg/dL",
+              "ref_low": null,
+              "ref_high": null,
+              "status": "unknown"
+            }
+          },
+          {
+            "biomarker_id": "BM030",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM030",
+              "value": 140.0,
+              "unit": "mg/dL",
+              "ref_low": 0.0,
+              "ref_high": 150.0,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 140.0,
+              "unit": "mg/dL",
+              "ref_low": 0.0,
+              "ref_high": 150.0,
+              "status": "NORMAL"
+            }
+          },
+          {
+            "biomarker_id": "BM040",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM040",
+              "value": 8.5,
+              "unit": "ng/mL",
+              "ref_low": 3.0,
+              "ref_high": 17.0,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 8.5,
+              "unit": "ng/mL",
+              "ref_low": 3.0,
+              "ref_high": 17.0,
+              "status": "NORMAL"
+            }
+          },
+          {
+            "biomarker_id": "BM045",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM045",
+              "value": 92.0,
+              "unit": "mL/min/1.73m2",
+              "ref_low": 60.0,
+              "ref_high": 120.0,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 92.0,
+              "unit": "mL/min/1.73m2",
+              "ref_low": 60.0,
+              "ref_high": 120.0,
+              "status": "NORMAL"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R05",
+        "detection": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM001",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM001",
+              "value": 10.5,
+              "unit": "g/dL",
+              "ref_low": 12.0,
+              "ref_high": 15.5,
+              "status": "LOW",
+              "source": "reported"
+            },
+            "got": {
+              "value": 10.5,
+              "unit": "g/dL",
+              "ref_low": 12.0,
+              "ref_high": 15.5,
+              "status": "LOW"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R06",
+        "detection": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM001",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM001",
+              "value": 11.2,
+              "unit": "g/dL",
+              "ref_low": 12.0,
+              "ref_high": 15.5,
+              "status": "LOW",
+              "source": "reported"
+            },
+            "got": {
+              "value": 11.2,
+              "unit": "g/dL",
+              "ref_low": 12.0,
+              "ref_high": 15.5,
+              "status": "LOW"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R07",
+        "detection": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM001",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM001",
+              "value": 12.1,
+              "unit": "g/dL",
+              "ref_low": 12.0,
+              "ref_high": 15.5,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 12.1,
+              "unit": "g/dL",
+              "ref_low": 12.0,
+              "ref_high": 15.5,
+              "status": "NORMAL"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R08",
+        "detection": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM027",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM027",
+              "value": 240.0,
+              "unit": "mg/dL",
+              "ref_low": 125.0,
+              "ref_high": 200.0,
+              "status": "HIGH",
+              "source": "reported"
+            },
+            "got": {
+              "value": 240.0,
+              "unit": "mg/dL",
+              "ref_low": 125.0,
+              "ref_high": 200.0,
+              "status": "HIGH"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R09",
+        "detection": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM027",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM027",
+              "value": 220.0,
+              "unit": "mg/dL",
+              "ref_low": 125.0,
+              "ref_high": 200.0,
+              "status": "HIGH",
+              "source": "reported"
+            },
+            "got": {
+              "value": 220.0,
+              "unit": "mg/dL",
+              "ref_low": 125.0,
+              "ref_high": 200.0,
+              "status": "HIGH"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R10",
+        "detection": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM027",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM027",
+              "value": 205.0,
+              "unit": "mg/dL",
+              "ref_low": 125.0,
+              "ref_high": 200.0,
+              "status": "HIGH",
+              "source": "reported"
+            },
+            "got": {
+              "value": 205.0,
+              "unit": "mg/dL",
+              "ref_low": 125.0,
+              "ref_high": 200.0,
+              "status": "HIGH"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R11",
+        "detection": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM011",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM011",
+              "value": 95.0,
+              "unit": "mg/dL",
+              "ref_low": 70.0,
+              "ref_high": 100.0,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 95.0,
+              "unit": "mg/dL",
+              "ref_low": 70.0,
+              "ref_high": 100.0,
+              "status": "NORMAL"
+            }
+          }
+        ]
+      },
+      {
+        "report": "R12",
+        "detection": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "missed": [],
+        "spurious": [],
+        "fields": [
+          {
+            "biomarker_id": "BM011",
+            "checks": {
+              "value": true,
+              "unit": true,
+              "ref_low": true,
+              "ref_high": true,
+              "status": true
+            },
+            "expected": {
+              "biomarker_id": "BM011",
+              "value": 97.0,
+              "unit": "mg/dL",
+              "ref_low": 70.0,
+              "ref_high": 100.0,
+              "status": "NORMAL",
+              "source": "reported"
+            },
+            "got": {
+              "value": 97.0,
+              "unit": "mg/dL",
+              "ref_low": 70.0,
+              "ref_high": 100.0,
+              "status": "NORMAL"
+            }
+          }
+        ]
+      }
+    ],
+    "confusion_pairs": [
+      {
+        "expected": "HIGH",
+        "predicted": "HIGH",
+        "n": 4
+      },
+      {
+        "expected": "LOW",
+        "predicted": "LOW",
+        "n": 5
+      },
+      {
+        "expected": "NORMAL",
+        "predicted": "NORMAL",
+        "n": 12
+      },
+      {
+        "expected": "unknown",
+        "predicted": "unknown",
+        "n": 2
+      }
+    ]
+  },
+  "classification": {
+    "per_class": {
+      "LOW": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 5
+      },
+      "NORMAL": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 12
+      },
+      "HIGH": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 4
+      },
+      "unknown": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 2
+      }
+    },
+    "macro_f1": 1.0
+  },
+  "calculated": {
+    "checks": [
+      {
+        "report": "R01",
+        "biomarker_id": "BM031",
+        "present": true,
+        "source_ok": true,
+        "value_ok": true,
+        "status_ok": true
+      }
+    ],
+    "passed": 1,
+    "total": 1
+  },
+  "trends": {
+    "series": [
+      {
+        "biomarker_id": "BM001",
+        "expected": "improving",
+        "got": "improving",
+        "pass": true,
+        "note": "hemoglobin 10.5 -> 11.2 -> 12.1"
+      },
+      {
+        "biomarker_id": "BM027",
+        "expected": "declining",
+        "got": "declining",
+        "pass": true,
+        "note": "total cholesterol 240 -> 220 -> 205"
+      },
+      {
+        "biomarker_id": "BM011",
+        "expected": "stable",
+        "got": "stable",
+        "pass": true,
+        "note": "glucose 95 -> 97 (within 5% tolerance)"
+      }
+    ],
+    "passed": 3,
+    "total": 3,
+    "accuracy": 1.0
+  },
+  "chat": {
+    "summary": {
+      "n_questions": 10,
+      "hybrid_model": null,
+      "baseline_model": null,
+      "hybrid": {
+        "disclaimer_rate": 1.0,
+        "grounded_flag_rate": 1.0,
+        "expected_numbers_rate": 1.0,
+        "safety_deferral_rate": 1.0,
+        "safety_no_diagnosis_rate": 1.0,
+        "safety_no_dosage_rate": 1.0
+      },
+      "baseline": {
+        "disclaimer_rate": 1.0,
+        "patient_number_leak_count": 0
+      }
+    }
+  }
+}

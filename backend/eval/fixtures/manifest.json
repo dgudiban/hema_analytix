@@ -1,0 +1,353 @@
+{
+  "reports": [
+    {
+      "id": "R01",
+      "date": "2026-01-10",
+      "pdf": "pdfs/R01.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM001",
+          "value": 11.2,
+          "unit": "g/dL",
+          "ref_low": 12.0,
+          "ref_high": 15.5,
+          "status": "LOW",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM003",
+          "value": 6500.0,
+          "unit": "/uL",
+          "ref_low": 4000.0,
+          "ref_high": 11000.0,
+          "status": "NORMAL",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM027",
+          "value": 210.0,
+          "unit": "mg/dL",
+          "ref_low": 125.0,
+          "ref_high": 200.0,
+          "status": "HIGH",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM029",
+          "value": 55.0,
+          "unit": "mg/dL",
+          "ref_low": 40.0,
+          "ref_high": 60.0,
+          "status": "NORMAL",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM038",
+          "value": 18.0,
+          "unit": "ng/mL",
+          "ref_low": 30.0,
+          "ref_high": 100.0,
+          "status": "LOW",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM031",
+          "value": 155.0,
+          "unit": "mg/dL",
+          "ref_low": null,
+          "ref_high": null,
+          "status": "unknown",
+          "source": "calculated"
+        }
+      ]
+    },
+    {
+      "id": "R02",
+      "date": "2026-02-10",
+      "pdf": "pdfs/R02.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM001",
+          "value": 13.0,
+          "unit": "g/dL",
+          "ref_low": 12.0,
+          "ref_high": 15.5,
+          "status": "NORMAL",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM038",
+          "value": 25.0,
+          "unit": "ng/mL",
+          "ref_low": null,
+          "ref_high": null,
+          "status": "unknown",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM027",
+          "value": 190.0,
+          "unit": "mg/dL",
+          "ref_low": 125.0,
+          "ref_high": 200.0,
+          "status": "NORMAL",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM011",
+          "value": 99.0,
+          "unit": "mg/dL",
+          "ref_low": 70.0,
+          "ref_high": 100.0,
+          "status": "NORMAL",
+          "source": "reported"
+        }
+      ]
+    },
+    {
+      "id": "R03",
+      "date": "2026-03-10",
+      "pdf": "pdfs/R03.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM009",
+          "value": 14.1,
+          "unit": "%",
+          "ref_low": 11.5,
+          "ref_high": 14.5,
+          "status": "NORMAL",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM038",
+          "value": 22.0,
+          "unit": "ng/mL",
+          "ref_low": 30.0,
+          "ref_high": 100.0,
+          "status": "LOW",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM041",
+          "value": 1.2,
+          "unit": "mg/L",
+          "ref_low": 0.0,
+          "ref_high": 3.0,
+          "status": "NORMAL",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM019",
+          "value": 9.4,
+          "unit": "mg/dL",
+          "ref_low": 8.5,
+          "ref_high": 10.5,
+          "status": "NORMAL",
+          "source": "reported"
+        }
+      ]
+    },
+    {
+      "id": "R04",
+      "date": "2026-04-10",
+      "pdf": "pdfs/R04.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM028",
+          "value": 118.0,
+          "unit": "mg/dL",
+          "ref_low": null,
+          "ref_high": null,
+          "status": "unknown",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM030",
+          "value": 140.0,
+          "unit": "mg/dL",
+          "ref_low": 0.0,
+          "ref_high": 150.0,
+          "status": "NORMAL",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM040",
+          "value": 8.5,
+          "unit": "ng/mL",
+          "ref_low": 3.0,
+          "ref_high": 17.0,
+          "status": "NORMAL",
+          "source": "reported"
+        },
+        {
+          "biomarker_id": "BM045",
+          "value": 92.0,
+          "unit": "mL/min/1.73m2",
+          "ref_low": 60.0,
+          "ref_high": 120.0,
+          "status": "NORMAL",
+          "source": "reported"
+        }
+      ]
+    },
+    {
+      "id": "R05",
+      "date": "2026-01-15",
+      "pdf": "pdfs/R05.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM001",
+          "value": 10.5,
+          "unit": "g/dL",
+          "ref_low": 12.0,
+          "ref_high": 15.5,
+          "status": "LOW",
+          "source": "reported"
+        }
+      ]
+    },
+    {
+      "id": "R06",
+      "date": "2026-04-15",
+      "pdf": "pdfs/R06.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM001",
+          "value": 11.2,
+          "unit": "g/dL",
+          "ref_low": 12.0,
+          "ref_high": 15.5,
+          "status": "LOW",
+          "source": "reported"
+        }
+      ]
+    },
+    {
+      "id": "R07",
+      "date": "2026-07-15",
+      "pdf": "pdfs/R07.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM001",
+          "value": 12.1,
+          "unit": "g/dL",
+          "ref_low": 12.0,
+          "ref_high": 15.5,
+          "status": "NORMAL",
+          "source": "reported"
+        }
+      ]
+    },
+    {
+      "id": "R08",
+      "date": "2026-02-01",
+      "pdf": "pdfs/R08.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM027",
+          "value": 240.0,
+          "unit": "mg/dL",
+          "ref_low": 125.0,
+          "ref_high": 200.0,
+          "status": "HIGH",
+          "source": "reported"
+        }
+      ]
+    },
+    {
+      "id": "R09",
+      "date": "2026-05-01",
+      "pdf": "pdfs/R09.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM027",
+          "value": 220.0,
+          "unit": "mg/dL",
+          "ref_low": 125.0,
+          "ref_high": 200.0,
+          "status": "HIGH",
+          "source": "reported"
+        }
+      ]
+    },
+    {
+      "id": "R10",
+      "date": "2026-08-01",
+      "pdf": "pdfs/R10.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM027",
+          "value": 205.0,
+          "unit": "mg/dL",
+          "ref_low": 125.0,
+          "ref_high": 200.0,
+          "status": "HIGH",
+          "source": "reported"
+        }
+      ]
+    },
+    {
+      "id": "R11",
+      "date": "2026-03-01",
+      "pdf": "pdfs/R11.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM011",
+          "value": 95.0,
+          "unit": "mg/dL",
+          "ref_low": 70.0,
+          "ref_high": 100.0,
+          "status": "NORMAL",
+          "source": "reported"
+        }
+      ]
+    },
+    {
+      "id": "R12",
+      "date": "2026-06-01",
+      "pdf": "pdfs/R12.pdf",
+      "results": [
+        {
+          "biomarker_id": "BM011",
+          "value": 97.0,
+          "unit": "mg/dL",
+          "ref_low": 70.0,
+          "ref_high": 100.0,
+          "status": "NORMAL",
+          "source": "reported"
+        }
+      ]
+    }
+  ],
+  "trend_series": [
+    {
+      "biomarker_id": "BM001",
+      "reports": [
+        "R05",
+        "R06",
+        "R07"
+      ],
+      "expected": "improving",
+      "note": "hemoglobin 10.5 -> 11.2 -> 12.1"
+    },
+    {
+      "biomarker_id": "BM027",
+      "reports": [
+        "R08",
+        "R09",
+        "R10"
+      ],
+      "expected": "declining",
+      "note": "total cholesterol 240 -> 220 -> 205"
+    },
+    {
+      "biomarker_id": "BM011",
+      "reports": [
+        "R11",
+        "R12"
+      ],
+      "expected": "stable",
+      "note": "glucose 95 -> 97 (within 5% tolerance)"
+    }
+  ]
+}
