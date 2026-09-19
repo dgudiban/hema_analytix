@@ -13,7 +13,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Sync repo to Hugging Face Space
-        uses: huggingface/hub-sync@v1
+        uses: huggingface/hub-sync@main
         with:
           repo_id: Sravanireddyg/bloodiq
           repo_type: space
