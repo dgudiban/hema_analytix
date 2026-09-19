@@ -55,31 +55,49 @@ for _m in _root_mounts:
     fastapi_app.mount(_m.path, _m.app, name=_m.name)
 
 if __name__ == "__main__":
-    # TEMPORARY DIAGNOSTIC: trace who binds port 7860.
-    import asyncio
-    import socket
-    import traceback
+    # TEMPORARY DIAGNOSTIC: identify the process holding port 7860 via /proc.
+    import os
 
-    _probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        _probe.bind(("0.0.0.0", 7860))
-        print("DIAG: port 7860 is FREE at __main__ entry", flush=True)
-    except OSError as e:
-        print(f"DIAG: port 7860 HELD at __main__ entry by another process: {e}", flush=True)
-    finally:
-        _probe.close()
+    def _find_port_holder(port: int):
+        _hex_port = f"{port:04X}"
+        _inodes = set()
+        for _f in ("/proc/net/tcp", "/proc/net/tcp6"):
+            try:
+                with open(_f) as fh:
+                    for _line in fh.read().splitlines()[1:]:
+                        _parts = _line.split()
+                        if len(_parts) > 9 and _parts[1].endswith(":" + _hex_port):
+                            _inodes.add(_parts[9])
+            except OSError:
+                pass
+        _holders = []
+        for _pid in os.listdir("/proc"):
+            if not _pid.isdigit():
+                continue
+            try:
+                _fds = os.listdir(f"/proc/{_pid}/fd")
+            except OSError:
+                continue
+            for _fd in _fds:
+                try:
+                    _target = os.readlink(f"/proc/{_pid}/fd/{_fd}")
+                except OSError:
+                    continue
+                if _target.startswith("socket:["):
+                    _ino = _target[8:-1]
+                    if _ino in _inodes:
+                        try:
+                            with open(f"/proc/{_pid}/cmdline", "rb") as fh:
+                                _cmd = fh.read().replace(b"\x00", b" ").decode().strip()
+                        except OSError:
+                            _cmd = "?"
+                        _holders.append((_pid, _cmd))
+                        break
+        return _holders
 
-    _orig_create_server = asyncio.AbstractEventLoop.create_server
-
-    async def _traced_create_server(self, *args, **kwargs):
-        _host = kwargs.get("host", args[1] if len(args) > 1 else None)
-        _port = kwargs.get("port", args[2] if len(args) > 2 else None)
-        if _port == 7860:
-            print(f"DIAG: create_server(host={_host}, port={_port}) called:", flush=True)
-            traceback.print_stack()
-        return await _orig_create_server(self, *args, **kwargs)
-
-    asyncio.AbstractEventLoop.create_server = _traced_create_server
+    _holders = _find_port_holder(7860)
+    print(f"DIAG: processes holding port 7860: {_holders}", flush=True)
+    print(f"DIAG: this process pid={os.getpid()}", flush=True)
 
     import uvicorn
 
