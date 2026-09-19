@@ -15,8 +15,6 @@ jobs:
       - name: Sync repo to Hugging Face Space
         uses: huggingface/hub-sync@main
         with:
-          repo_id: Sravanireddyg/bloodiq
-          repo_type: space
-          branch: main
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          github_repo_id: ${{ github.repository }}
+          huggingface_repo_id: Sravanireddyg/bloodiq
+          huggingface_token: ${{ secrets.HF_TOKEN }}
