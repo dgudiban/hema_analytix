@@ -58,6 +58,16 @@ for _m in _root_mounts:
     fastapi_app.mount(_m.path, _m.app, name=_m.name)
 
 if __name__ == "__main__":
+    # Trigger the ZeroGPU startup handshake. The spaces package normally does
+    # this via the patched demo.launch(), but we serve via uvicorn directly.
+    # Without the startup report, the platform doesn't detect our @spaces.GPU
+    # function and shuts the app down.
+    try:
+        from spaces.zero import startup as _zerogpu_startup
+        _zerogpu_startup()
+    except ImportError:
+        pass  # Not on ZeroGPU (SPACES_ZERO_GPU not set); nothing to do.
+
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "7860")))
