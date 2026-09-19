@@ -114,6 +114,8 @@ future RAG knowledge base; the app itself works identically on either database.
 | GET | `/api/reports` | List reports with result counts and report dates |
 | GET | `/api/reports/trends/{biomarker_id}` | Trend points + `improving`/`declining`/`stable` (register before `/{report_id}`) |
 | GET | `/api/reports/{id}` | Full report detail including results |
+| POST | `/api/chat` | Hybrid grounded chat: `{message, report_id?, history?}` → `{answer, model, mode, sources, used_biomarker_ids, numbers_grounded}` |
+| POST | `/api/chat/baseline` | LLM-only baseline (no patient data, no RAG) — for the research comparison |
 
 ## Running the tests
 
@@ -131,6 +133,38 @@ python -m pytest
 - `tests/test_api.py` — full upload → analyze flow against a generated PDF
   (report date capture, LOW status from the report's range, calculated Non-HDL)
   plus the trends endpoint.
+- `tests/test_retrieval.py` — KB chunk loading (45 biomarker + 6 general
+  chunks) and TF-IDF ranking.
+- `tests/test_chat.py` — biomarker mention detection, the `numbers_grounded`
+  heuristic, hybrid chat (grounded answer, sources, deterministic disclaimer,
+  no-LLM fallback), the LLM-only baseline, and the chat API endpoints.
+
+## Conversational AI (hybrid RAG + chat)
+
+**Knowledge base** — `data/knowledge/` holds 51 curated chunks: one per
+biomarker generated from the official spec (`python -m backend.app.utils.build_kb`)
+plus 6 hand-written general chunks (classification, reference ranges, trends,
+calculated results, traceability, safety). No LLM-generated medical claims.
+
+**Retrieval** — TF-IDF cosine similarity (`backend/app/services/retrieval_service.py`):
+deterministic, zero-cost, no model download. Swappable for embeddings later via
+the `Retriever` protocol (pgvector is provisioned in `docker-compose.yml`).
+
+**Hybrid chat** (`POST /api/chat`) — detects mentioned biomarkers → pulls your
+deterministic results + trend direction → retrieves KB chunks → asks the LLM
+(Gemini free tier → local Ollama) to answer using *only* that context, with a
+strict safety system prompt. Every answer gets the educational disclaimer
+appended in code, and `numbers_grounded` flags any number not present in the
+context. Works without an LLM too (deterministic fallback listing your facts).
+
+**Baseline** (`POST /api/chat/baseline`) — the raw question straight to the LLM,
+no patient data, no retrieval. This is the LLM-only arm of the research
+comparison; toggle Hybrid/Baseline in the frontend chat panel.
+
+**Safety eval** — `cd backend && ../.venv/bin/python -m eval.safety_eval`
+runs adversarial prompts (diagnosis/treatment/emergency/prompt-injection)
+against the deterministic guarantees: safety instructions, disclaimer, and the
+groundedness signal.
 
 ## AI explanations (optional, free)
 
@@ -175,8 +209,9 @@ confirm with your report and consult a qualified healthcare professional.
 
 Per the project docs, these remain future work:
 
-- RAG medical knowledge base (pgvector is provisioned in `docker-compose.yml` for this)
-- Conversational chat ("Has my hemoglobin improved?", "Why might my Vitamin D be low?")
-- Evaluation dataset + baseline LLM-only comparison
+- Full evaluation dataset (extraction accuracy, classification metrics, trend
+  accuracy, explanation factuality/clarity) — the chat comparison harness and
+  safety eval are the starting point
+- Embedding-based retrieval (MiniLM + pgvector) as an upgrade over TF-IDF
 - Research paper
 - React + Recharts frontend migration (the current canvas trend chart is interim)

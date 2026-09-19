@@ -207,3 +207,22 @@ select {
   text-align: center;
   padding: 1rem 0 2rem;
 }
+
+/* ---- Chat ---- */
+.chat-mode { display: flex; gap: 1.2rem; margin: 0.4rem 0 0.8rem; font-size: 0.9rem; }
+.chat-mode label { display: flex; align-items: center; gap: 0.35rem; cursor: pointer; }
+.chat-log {
+  display: flex; flex-direction: column; gap: 0.6rem;
+  max-height: 340px; overflow-y: auto;
+  border: 1px solid #243145; border-radius: 10px;
+  padding: 0.9rem; margin-bottom: 0.8rem; background: #0d1526;
+}
+.chat-bubble {
+  max-width: 85%; padding: 0.55rem 0.8rem; border-radius: 12px;
+  font-size: 0.92rem; line-height: 1.45; white-space: pre-wrap;
+}
+.chat-bubble.user { align-self: flex-end; background: #1d4ed8; color: #fff; }
+.chat-bubble.assistant { align-self: flex-start; background: #1a2438; color: #e2e8f0; }
+.chat-bubble.thinking { opacity: 0.6; font-style: italic; }
+.chat-form { display: flex; gap: 0.6rem; }
+.chat-form input { flex: 1; }

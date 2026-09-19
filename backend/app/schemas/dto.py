@@ -82,3 +82,28 @@ class TrendResponse(BaseModel):
     points: list[TrendPoint]
     excluded: list[TrendExcludedPoint] = []
     direction: str  # "improving" | "declining" | "stable"
+
+
+class ChatMessage(BaseModel):
+    role: str  # "user" | "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    report_id: int | None = None
+    history: list[ChatMessage] = []
+
+
+class ChatSource(BaseModel):
+    id: str
+    title: str
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    model: str | None = None
+    mode: str  # "hybrid" | "baseline"
+    sources: list[ChatSource] = []
+    used_biomarker_ids: list[str] = []
+    numbers_grounded: bool = True

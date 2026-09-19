@@ -4,6 +4,7 @@ const API = ""; // same origin; the backend serves this page
 const $ = (id) => document.getElementById(id);
 
 let lastAiExplanation = null;
+let lastReportId = null;
 
 async function checkHealth() {
   const el = $("api-status");
@@ -32,6 +33,7 @@ function fmtRange(r) {
 function renderResults(data) {
   $("results-card").classList.remove("hidden");
   $("report-title").textContent = `Report #${data.report_id}`;
+  lastReportId = data.report_id;
   $("summary").textContent = data.summary;
   lastAiExplanation = data.ai_explanation;
   $("ai-panel").classList.add("hidden");
@@ -258,6 +260,68 @@ function drawTrend(trend) {
   ctx.fillStyle = "#94a3b8";
   ctx.fillText(trend.unit || "", W - padR - 30, padT + 4);
 }
+
+/* ---- Chat ---- */
+
+const chatHistory = [];
+
+function chatMode() {
+  const el = document.querySelector('input[name="chat-mode"]:checked');
+  return el ? el.value : "hybrid";
+}
+
+function addChatBubble(role, text) {
+  const log = $("chat-log");
+  const div = document.createElement("div");
+  div.className = `chat-bubble ${role}`;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function handleChat(e) {
+  e.preventDefault();
+  const input = $("chat-input");
+  const message = input.value.trim();
+  if (!message) return;
+  input.value = "";
+  addChatBubble("user", message);
+  chatHistory.push({ role: "user", content: message });
+
+  const mode = chatMode();
+  const thinking = document.createElement("div");
+  thinking.className = "chat-bubble assistant thinking";
+  thinking.textContent = "Thinking…";
+  $("chat-log").appendChild(thinking);
+
+  try {
+    const url = mode === "baseline" ? `${API}/api/chat/baseline` : `${API}/api/chat`;
+    const body = mode === "baseline"
+      ? { message }
+      : { message, report_id: lastReportId, history: chatHistory.slice(0, -1) };
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    thinking.remove();
+    addChatBubble("assistant", data.answer);
+    chatHistory.push({ role: "assistant", content: data.answer });
+    const srcs = (data.sources || []).map((s) => s.title).join(", ");
+    $("chat-meta").textContent =
+      `mode: ${data.mode}` +
+      (data.model ? ` · model: ${data.model}` : " · model: unavailable") +
+      (srcs ? ` · sources: ${srcs}` : "") +
+      (data.numbers_grounded === false ? " · ⚠ some numbers not found in context" : "");
+  } catch (err) {
+    thinking.remove();
+    addChatBubble("assistant", `Sorry — could not get an answer (${err.message}).`);
+  }
+}
+
+$("chat-form").addEventListener("submit", handleChat);
 
 $("upload-form").addEventListener("submit", handleUpload);
 $("explain-btn").addEventListener("click", handleExplain);

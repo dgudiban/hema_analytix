@@ -70,6 +70,21 @@
       <ul id="history-list" class="history"></ul>
     </section>
 
+    <section class="card" id="chat-card">
+      <h2>Ask about your results</h2>
+      <p class="muted">Grounded answers use your reports plus curated knowledge. Baseline answers come from the AI alone, for comparison.</p>
+      <div class="chat-mode">
+        <label><input type="radio" name="chat-mode" value="hybrid" checked /> Hybrid (grounded)</label>
+        <label><input type="radio" name="chat-mode" value="baseline" /> Baseline (AI only)</label>
+      </div>
+      <div id="chat-log" class="chat-log" aria-live="polite"></div>
+      <form id="chat-form" class="chat-form">
+        <input type="text" id="chat-input" placeholder="e.g. Why is my hemoglobin low?" autocomplete="off" />
+        <button type="submit" id="chat-send">Ask</button>
+      </form>
+      <p id="chat-meta" class="muted small"></p>
+    </section>
+
     <footer class="disclaimer">
       BloodIQ is educational and is <strong>not a substitute for professional
       medical advice</strong>. Reference ranges shown are the ones printed on
