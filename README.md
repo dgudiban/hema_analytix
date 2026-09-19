@@ -1,3 +1,13 @@
+---
+title: BloodIQ
+emoji: 🩸
+colorFrom: red
+colorTo: red
+sdk: gradio
+app_file: app.py
+pinned: false
+---
+
 # BloodIQ 🩸
 
 A full-stack blood-report analytics app: upload a blood-test PDF → extract text
