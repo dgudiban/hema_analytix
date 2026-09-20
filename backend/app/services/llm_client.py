@@ -69,6 +69,10 @@ def _groq_complete(
                 ],
                 "temperature": 0.3,
                 "max_tokens": max_tokens,
+                # gpt-oss is a reasoning model; hidden reasoning tokens count
+                # against the free TPM quota, so keep reasoning minimal for
+                # transcription-style tasks.
+                "reasoning_effort": "low",
             },
             timeout=90,
         )
