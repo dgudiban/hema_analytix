@@ -74,7 +74,7 @@ Rules (follow strictly):
 - "test": the test name as printed. If it clearly matches one of these canonical names, use the canonical name exactly: {names}
 - "value": the result number exactly as printed (do not round, do not convert units).
 - "unit": the unit as printed (e.g. "g/dL", "mg/dL", "/cmm", "million/cmm", "%", "pg", "fL", "mmol/L", "U/L", "ng/mL", "pg/mL", "micromol/L", "IU/mL", "S/Co"). If no unit is printed, use null.
-- "ref_low"/"ref_high": the printed reference range bounds as numbers. For ranges like "13.0 - 16.5" use ref_low 13.0, ref_high 16.5. For "<200" use ref_low null, ref_high 200. For ">60" use ref_low 60, ref_high null. For descriptive ranges (e.g. "Desirable: <200", "Up to 5.0", "Non Reactive: <1.0") use the numeric bound that applies. If a range is printed as multiple bands (e.g. "Optimal: <100 / Near optimal: 100-129 / Borderline: 130-159", or "Normal: <150 / Borderline: 150-199 / High: 200-499"), report the band labeled Optimal, Normal, Desirable, or Sufficient — the healthiest target — and ignore borderline/high bands. (For "Optimal: <100" use ref_low null, ref_high 100.) If no numeric range is printed, use null for both.
+- "ref_low"/"ref_high": the printed reference range bounds as numbers. For ranges like "13.0 - 16.5" use ref_low 13.0, ref_high 16.5. For "<200" use ref_low null, ref_high 200. For ">60" use ref_low 60, ref_high null. For descriptive ranges (e.g. "Desirable: <200", "Up to 5.0", "Non Reactive: <1.0") use the numeric bound that applies. If a range is printed as multiple bands, report the band labeled Optimal, Normal, Desirable, Sufficient, or Sufficiency — the healthiest target — and ignore deficiency/insufficiency/borderline/high bands. Examples: for "Optimal: <100 / Near optimal: 100-129 / Borderline: 130-159" use ref_low null, ref_high 100; for "Deficiency: <10 / Insufficiency: 10-30 / Sufficiency: 30-100" use ref_low 30, ref_high 100; for "Normal: <150 / Borderline: 150-199 / High: 200-499" use ref_low null, ref_high 150. If no numeric range is printed, use null for both.
 - "flag": the lab's own printed flag for the row (e.g. "H", "L", "Low", "High", "Borderline", "Normal") or null if none is printed. Never derive a flag yourself.
 - The text may list columns in any order (e.g. Test, Unit, Reference, Method, Result). Read each row as a whole and associate the result number with its test correctly.
 - Never invent a row that is not in the text. Never output a test you are unsure about.
@@ -245,7 +245,13 @@ def _transcribe_chunk(
         return [], True, reason
     data = _extract_json(text)
     if not data:
-        logger.warning("AI extraction: unparseable JSON from %s", model)
+        # One fresh sample: an unparseable reply is usually a one-off glitch,
+        # and a single extra call is cheaper than losing the whole chunk.
+        logger.warning("AI extraction: unparseable JSON from %s; resampling once", model)
+        text, model = _complete_with_retry(prompt, False)
+        data = _extract_json(text) if text else None
+    if not data:
+        logger.warning("AI extraction: chunk still unparseable after resample")
         return [], True, "bad_json"
     rows = data.get("rows") if isinstance(data, dict) else data
     if not isinstance(rows, list):

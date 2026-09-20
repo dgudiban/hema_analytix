@@ -1,4 +1,5 @@
 """Tests for AI-assisted extraction (ai_extract_service) and match_biomarker."""
+import json
 from unittest.mock import patch
 
 import pytest
@@ -131,6 +132,38 @@ def test_extract_falls_back_on_bad_json():
     ):
         out, source = ai_extract_service.extract(CHUNK, SPEC)
     assert source == "rules" and out == []
+
+
+def test_bad_json_resamples_once_and_recovers():
+    good = json.dumps(
+        {
+            "rows": [
+                {
+                    "test": "Hemoglobin",
+                    "value": 14.5,
+                    "unit": "g/dL",
+                    "ref_low": 13.0,
+                    "ref_high": 16.5,
+                    "flag": None,
+                }
+            ]
+        }
+    )
+    calls = {"n": 0}
+
+    def fake_complete(*a, **k):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return ("not json at all", "openai/gpt-oss-20b")
+        return (good, "openai/gpt-oss-20b")
+
+    with patch.object(
+        ai_extract_service.llm_client, "complete", side_effect=fake_complete
+    ), patch.object(parse_service, "parse_text", return_value=[]):
+        out, source = ai_extract_service.extract(CHUNK, SPEC)
+    assert source == "ai"
+    assert calls["n"] == 2  # one resample, no more
+    assert out and out[0]["standard_name"] == "Hemoglobin"
 
 
 def test_extract_respects_ai_extraction_off(monkeypatch):
