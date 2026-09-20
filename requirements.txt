@@ -12,3 +12,6 @@ requests
 openpyxl
 psycopg2-binary
 scikit-learn
+pyjwt
+bcrypt
+email-validator

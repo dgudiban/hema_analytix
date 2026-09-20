@@ -52,6 +52,9 @@ def ensure_columns() -> None:
                 conn.execute(
                     text("ALTER TABLE reports ADD COLUMN extraction_source VARCHAR(8)")
                 )
+        if "user_id" not in existing_reports:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE reports ADD COLUMN user_id INTEGER"))
 
 
 def get_db():

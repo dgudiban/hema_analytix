@@ -9,10 +9,40 @@
 <body>
   <header class="topbar">
     <div class="brand">🩸 BloodIQ</div>
-    <div id="api-status" class="api-status" title="Backend connectivity">● connecting…</div>
+    <div class="topbar-right">
+      <div id="api-status" class="api-status" title="Backend connectivity">● connecting…</div>
+      <div id="user-chip" class="user-chip hidden">
+        <span id="user-name" class="user-name"></span>
+        <button id="logout-btn" class="link-btn" type="button">Logout</button>
+      </div>
+    </div>
   </header>
 
-  <main class="container">
+  <!-- Shown until the patient logs in. -->
+  <main class="container" id="auth-view">
+    <section class="card auth-card">
+      <h2>🩸 BloodIQ</h2>
+      <p class="muted">Your blood reports, tracked over time — private to your account.</p>
+      <div class="auth-tabs">
+        <button type="button" id="tab-login" class="auth-tab active">Log in</button>
+        <button type="button" id="tab-signup" class="auth-tab">Sign up</button>
+      </div>
+      <form id="login-form" class="auth-form">
+        <input type="email" id="login-email" placeholder="Email" required autocomplete="email" />
+        <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password" />
+        <button type="submit" id="login-btn">Log in</button>
+      </form>
+      <form id="signup-form" class="auth-form hidden">
+        <input type="text" id="signup-name" placeholder="Full name" required autocomplete="name" />
+        <input type="email" id="signup-email" placeholder="Email" required autocomplete="email" />
+        <input type="password" id="signup-password" placeholder="Password (min 8 characters)" required minlength="8" autocomplete="new-password" />
+        <button type="submit" id="signup-btn">Create account</button>
+      </form>
+      <p id="auth-error" class="auth-error hidden"></p>
+    </section>
+  </main>
+
+  <main class="container hidden" id="app-view">
     <section class="card" id="upload-card">
       <h2>Upload a blood report</h2>
       <p class="muted">PDF only. Text is extracted locally; nothing is sent anywhere unless you ask for an AI explanation.</p>

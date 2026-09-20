@@ -11,10 +11,29 @@ from sqlalchemy.orm import relationship
 from app.models.db import Base
 
 
+class User(Base):
+    """A patient account. Every report belongs to exactly one user."""
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    password_hash = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    reports = relationship(
+        "Report", back_populates="user", cascade="all, delete-orphan"
+    )
+
+
 class Report(Base):
     __tablename__ = "reports"
 
     id = Column(Integer, primary_key=True, index=True)
+    # Owner; nullable only so pre-login databases keep working — every
+    # report created through the API always sets it.
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     filename = Column(String(255), nullable=False)
     uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     # Date printed on the report (falls back to the upload date at capture).
@@ -26,6 +45,7 @@ class Report(Base):
     results = relationship(
         "Result", back_populates="report", cascade="all, delete-orphan"
     )
+    user = relationship("User", back_populates="reports")
 
 
 class Result(Base):

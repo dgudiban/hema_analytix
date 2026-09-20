@@ -1,11 +1,16 @@
-"""Report endpoints: upload, analyze, list, fetch, and trends."""
+"""Report endpoints: upload, analyze, list, fetch, and trends.
+
+Every endpoint requires a logged-in patient and only ever touches that
+patient's own reports — no cross-account data is reachable.
+"""
 from datetime import date
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.models.db import get_db
-from app.models.entities import Report, Result
+from app.models.entities import Report, Result, User
 from app.schemas.dto import (
     AnalyzeResponse,
     ReportDetail,
@@ -28,8 +33,19 @@ from app.utils.spec import get_biomarkers
 router = APIRouter()
 
 
+def _owned_report(db: Session, report_id: int, user: User) -> Report:
+    report = db.get(Report, report_id)
+    if report is None or report.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Report not found.")
+    return report
+
+
 @router.post("/upload", response_model=UploadResponse)
-async def upload_report(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_report(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
     saved_path = pdf_service.save_upload(file.filename, file.file)
@@ -37,7 +53,10 @@ async def upload_report(file: UploadFile = File(...), db: Session = Depends(get_
     report_date = parse_report_date(text, fallback=date.today())
 
     report = Report(
-        filename=saved_path.name, raw_text=text, report_date=report_date
+        user_id=user.id,
+        filename=saved_path.name,
+        raw_text=text,
+        report_date=report_date,
     )
     db.add(report)
     db.commit()
@@ -54,10 +73,12 @@ async def upload_report(file: UploadFile = File(...), db: Session = Depends(get_
 
 
 @router.post("/{report_id}/analyze", response_model=AnalyzeResponse)
-def analyze_report(report_id: int, db: Session = Depends(get_db)):
-    report = db.get(Report, report_id)
-    if report is None:
-        raise HTTPException(status_code=404, detail="Report not found.")
+def analyze_report(
+    report_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    report = _owned_report(db, report_id, user)
 
     # AI transcription first (transcribes printed facts only — status stays
     # deterministic); rule-based parser is the automatic fallback.
@@ -108,8 +129,12 @@ def analyze_report(report_id: int, db: Session = Depends(get_db)):
 # Registered BEFORE /{report_id} so the literal "trends" segment can never
 # collide with a report id (report_id is int-typed anyway).
 @router.get("/trends/{biomarker_id}", response_model=TrendResponse)
-def get_trend(biomarker_id: str, db: Session = Depends(get_db)):
-    trend = trend_service.get_trend(db, biomarker_id)
+def get_trend(
+    biomarker_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    trend = trend_service.get_trend(db, biomarker_id, user_id=user.id)
     if trend is None:
         raise HTTPException(
             status_code=404, detail=f"No results found for {biomarker_id}."
@@ -118,8 +143,15 @@ def get_trend(biomarker_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("", response_model=list[ReportSummary])
-def list_reports(db: Session = Depends(get_db)):
-    reports = db.query(Report).order_by(Report.id.desc()).all()
+def list_reports(
+    db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
+    reports = (
+        db.query(Report)
+        .filter(Report.user_id == user.id)
+        .order_by(Report.id.desc())
+        .all()
+    )
     return [
         {
             "id": r.id,
@@ -148,10 +180,12 @@ def _result_out(r: Result) -> dict:
 
 
 @router.get("/{report_id}", response_model=ReportDetail)
-def get_report(report_id: int, db: Session = Depends(get_db)):
-    report = db.get(Report, report_id)
-    if report is None:
-        raise HTTPException(status_code=404, detail="Report not found.")
+def get_report(
+    report_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    report = _owned_report(db, report_id, user)
     return {
         "id": report.id,
         "filename": report.filename,

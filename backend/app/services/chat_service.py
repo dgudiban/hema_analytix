@@ -85,13 +85,22 @@ def detect_mentions(message: str, biomarkers: list[dict] | None = None) -> list[
 
 
 def _patient_facts(
-    db: Session, report_id: int | None, mentioned: list[dict]
+    db: Session,
+    report_id: int | None,
+    mentioned: list[dict],
+    user_id: int | None = None,
 ) -> tuple[str, list[str]]:
-    """Deterministic facts block + the biomarker ids it covers."""
+    """Deterministic facts block + the biomarker ids it covers.
+
+    When *user_id* is given, a report owned by someone else is treated as
+    missing — cross-account patient data is never exposed.
+    """
     if report_id is None:
         return "No report selected; no patient data available.", []
     report = db.get(Report, report_id)
-    if report is None or not report.results:
+    if report is None or (user_id is not None and report.user_id != user_id):
+        return "The selected report was not found.", []
+    if not report.results:
         return "The selected report has no analyzed results yet.", []
 
     mentioned_ids = {b["biomarker_id"] for b in mentioned}
@@ -115,7 +124,7 @@ def _patient_facts(
         used_ids.append(r.biomarker_id)
 
     for b in mentioned:
-        trend = trend_service.get_trend(db, b["biomarker_id"])
+        trend = trend_service.get_trend(db, b["biomarker_id"], user_id=user_id)
         if trend and len(trend["points"]) >= 2:
             latest = trend["points"][-1]
             lines.append(
@@ -164,6 +173,7 @@ def answer_question(
     db: Session,
     report_id: int | None = None,
     history: list[dict] | None = None,
+    user_id: int | None = None,
 ) -> dict:
     """Hybrid grounded answer. Never raises for missing LLM (falls back)."""
     if not message.strip():
@@ -177,7 +187,7 @@ def answer_question(
         }
     spec = get_biomarkers()
     mentioned = detect_mentions(message, spec)
-    patient_facts, used_ids = _patient_facts(db, report_id, mentioned)
+    patient_facts, used_ids = _patient_facts(db, report_id, mentioned, user_id=user_id)
 
     query = message + " " + " ".join(b["standard_name"] for b in mentioned)
     hits = retrieval_service.retrieve(query, top_k=4)

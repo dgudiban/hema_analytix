@@ -226,3 +226,31 @@ select {
 .chat-bubble.thinking { opacity: 0.6; font-style: italic; }
 .chat-form { display: flex; gap: 0.6rem; }
 .chat-form input { flex: 1; }
+
+/* ---- Auth ---- */
+.topbar-right { display: flex; align-items: center; gap: 1rem; }
+.user-chip { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; }
+.user-name { color: var(--text); font-weight: 600; }
+.link-btn {
+  background: none; border: none; color: var(--accent);
+  cursor: pointer; font-size: 0.85rem; padding: 0;
+}
+.link-btn:hover { text-decoration: underline; }
+.auth-card { max-width: 420px; margin: 4rem auto; text-align: center; }
+.auth-tabs { display: flex; gap: 0.5rem; justify-content: center; margin: 1rem 0; }
+.auth-tab {
+  background: none; border: 1px solid #334155; color: var(--muted);
+  padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 0.95rem;
+}
+.auth-tab.active { background: var(--accent); border-color: var(--accent); color: #0b1220; font-weight: 600; }
+.auth-form { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; }
+.auth-form input {
+  padding: 0.7rem; border-radius: 6px; border: 1px solid #334155;
+  background: #0f172a; color: var(--text); font-size: 1rem;
+}
+.auth-form button {
+  padding: 0.7rem; border-radius: 6px; border: none; cursor: pointer;
+  background: var(--accent); color: #0b1220; font-weight: 700; font-size: 1rem;
+}
+.auth-form button:disabled { opacity: 0.6; cursor: wait; }
+.auth-error { color: var(--red); font-size: 0.9rem; margin-top: 0.75rem; }

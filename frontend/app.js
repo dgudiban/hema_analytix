@@ -3,8 +3,120 @@ const API = ""; // same origin; the backend serves this page
 
 const $ = (id) => document.getElementById(id);
 
+const TOKEN_KEY = "bloodiq_token";
+let currentUser = null;
 let lastAiExplanation = null;
 let lastReportId = null;
+
+function authHeaders() {
+  const t = localStorage.getItem(TOKEN_KEY);
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+/** Authenticated fetch. A 401 mid-session drops back to the login screen. */
+async function api(path, opts = {}) {
+  const res = await fetch(`${API}${path}`, {
+    ...opts,
+    headers: { ...(opts.headers || {}), ...authHeaders() },
+  });
+  if (res.status === 401 && currentUser) {
+    logout();
+    throw new Error("Session expired — please log in again.");
+  }
+  return res;
+}
+
+/* ---- Auth ---- */
+
+function showAuth() {
+  $("auth-view").classList.remove("hidden");
+  $("app-view").classList.add("hidden");
+  $("user-chip").classList.add("hidden");
+}
+
+function showApp(user) {
+  currentUser = user;
+  $("auth-view").classList.add("hidden");
+  $("app-view").classList.remove("hidden");
+  $("user-chip").classList.remove("hidden");
+  $("user-name").textContent = `👤 ${user.name}`;
+  loadHistory();
+  loadTrend();
+}
+
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  currentUser = null;
+  lastReportId = null;
+  showAuth();
+}
+
+function authError(msg) {
+  const el = $("auth-error");
+  el.textContent = msg;
+  el.classList.remove("hidden");
+}
+
+async function handleAuth(event, mode) {
+  event.preventDefault();
+  $("auth-error").classList.add("hidden");
+  const btn = mode === "login" ? $("login-btn") : $("signup-btn");
+  btn.disabled = true;
+  try {
+    const body =
+      mode === "login"
+        ? { email: $("login-email").value.trim(), password: $("login-password").value }
+        : {
+            name: $("signup-name").value.trim(),
+            email: $("signup-email").value.trim(),
+            password: $("signup-password").value,
+          };
+    const res = await fetch(`${API}/api/auth/${mode}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || `${mode} failed`);
+    localStorage.setItem(TOKEN_KEY, data.access_token);
+    showApp(data.user);
+  } catch (err) {
+    authError(err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function switchAuthTab(mode) {
+  const login = mode === "login";
+  $("tab-login").classList.toggle("active", login);
+  $("tab-signup").classList.toggle("active", !login);
+  $("login-form").classList.toggle("hidden", !login);
+  $("signup-form").classList.toggle("hidden", login);
+  $("auth-error").classList.add("hidden");
+}
+
+async function initAuth() {
+  $("tab-login").addEventListener("click", () => switchAuthTab("login"));
+  $("tab-signup").addEventListener("click", () => switchAuthTab("signup"));
+  $("login-form").addEventListener("submit", (e) => handleAuth(e, "login"));
+  $("signup-form").addEventListener("submit", (e) => handleAuth(e, "signup"));
+  $("logout-btn").addEventListener("click", logout);
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) {
+    showAuth();
+    return;
+  }
+  try {
+    const res = await api("/api/auth/me");
+    if (!res.ok) throw new Error("bad token");
+    showApp(await res.json());
+  } catch {
+    localStorage.removeItem(TOKEN_KEY);
+    showAuth();
+  }
+}
 
 async function checkHealth() {
   const el = $("api-status");
@@ -93,7 +205,7 @@ async function handleUpload(event) {
   try {
     const form = new FormData();
     form.append("file", file);
-    const upRes = await fetch(`${API}/api/reports/upload`, { method: "POST", body: form });
+    const upRes = await api(`/api/reports/upload`, { method: "POST", body: form });
     if (!upRes.ok) {
       const err = await upRes.json().catch(() => ({}));
       throw new Error(err.detail || "Upload failed");
@@ -105,8 +217,8 @@ async function handleUpload(event) {
       note.classList.remove("hidden");
     }
 
-    progress.textContent = "Analyzing…";
-    const anRes = await fetch(`${API}/api/reports/${uploaded.report_id}/analyze`, { method: "POST" });
+    progress.textContent = "Analyzing… (AI extraction takes ~3–4 min for a full report)";
+    const anRes = await api(`/api/reports/${uploaded.report_id}/analyze`, { method: "POST" });
     if (!anRes.ok) throw new Error("Analysis failed");
     const analyzed = await anRes.json();
 
@@ -140,7 +252,7 @@ async function handleExplain() {
 async function loadHistory() {
   const list = $("history-list");
   try {
-    const res = await fetch(`${API}/api/reports`);
+    const res = await api(`/api/reports`);
     const reports = await res.json();
     list.innerHTML = "";
     if (reports.length === 0) {
@@ -155,7 +267,7 @@ async function loadHistory() {
       link.textContent = `#${r.id} ${r.filename}${when} (${r.result_count} results)`;
       link.addEventListener("click", async (e) => {
         e.preventDefault();
-        const dRes = await fetch(`${API}/api/reports/${r.id}`);
+        const dRes = await api(`/api/reports/${r.id}`);
         const detail = await dRes.json();
         renderResults({
           report_id: detail.id,
@@ -204,7 +316,7 @@ async function loadTrend() {
     return;
   }
   try {
-    const res = await fetch(`${API}/api/reports/trends/${id}`);
+    const res = await api(`/api/reports/trends/${id}`);
     if (!res.ok) throw new Error("no data");
     const trend = await res.json();
     result.classList.remove("hidden");
@@ -310,7 +422,7 @@ async function handleChat(e) {
     const body = mode === "baseline"
       ? { message }
       : { message, report_id: lastReportId, history: chatHistory.slice(0, -1) };
-    const res = await fetch(url, {
+    const res = await api(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -339,5 +451,5 @@ $("explain-btn").addEventListener("click", handleExplain);
 $("trend-form").addEventListener("submit", (e) => { e.preventDefault(); loadTrend(); });
 $("trend-select").addEventListener("change", loadTrend);
 checkHealth();
-loadHistory();
 loadBiomarkers();
+initAuth();

@@ -9,11 +9,26 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.models.db import SessionLocal
-from app.models.entities import Report, Result
-from app.services import chat_service, llm_client
+from app.models.entities import Report, Result, User
+from app.services import auth_service, chat_service, llm_client
 from app.utils.spec import get_biomarkers
+from conftest import make_auth_headers
 
 client = TestClient(app)
+
+_chat_auth = None
+
+
+def _headers():
+    global _chat_auth
+    if _chat_auth is None:
+        _chat_auth = make_auth_headers(client)
+    return _chat_auth
+
+
+def _user_id_from_headers(headers):
+    token = headers["Authorization"].split(" ", 1)[1]
+    return auth_service.decode_token(token)
 
 
 @pytest.fixture()
@@ -24,7 +39,8 @@ def spec():
 @pytest.fixture()
 def report_with_results():
     db = SessionLocal()
-    report = Report(filename="chat.pdf", raw_text="Hemoglobin 11.2 g/dL (12.0-15.5)", report_date=date(2026, 9, 1))
+    user_id = _user_id_from_headers(_headers())
+    report = Report(user_id=user_id, filename="chat.pdf", raw_text="Hemoglobin 11.2 g/dL (12.0-15.5)", report_date=date(2026, 9, 1))
     db.add(report)
     db.commit()
     db.refresh(report)
@@ -170,11 +186,20 @@ def test_chat_api_hybrid(stub_llm, report_with_results):
     res = client.post(
         "/api/chat",
         json={"message": "Why is my hemoglobin low?", "report_id": report_with_results},
+        headers=_headers(),
     )
     assert res.status_code == 200
     data = res.json()
     assert data["mode"] == "hybrid"
     assert data["answer"].endswith(chat_service.DISCLAIMER)
+
+
+def test_chat_api_requires_auth(stub_llm, report_with_results):
+    res = client.post(
+        "/api/chat",
+        json={"message": "Why is my hemoglobin low?", "report_id": report_with_results},
+    )
+    assert res.status_code == 401
 
 
 def test_chat_api_baseline(stub_llm):
@@ -184,5 +209,5 @@ def test_chat_api_baseline(stub_llm):
 
 
 def test_chat_api_empty_message():
-    res = client.post("/api/chat", json={"message": "  "})
+    res = client.post("/api/chat", json={"message": "  "}, headers=_headers())
     assert res.status_code == 200

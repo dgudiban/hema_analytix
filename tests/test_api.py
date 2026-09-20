@@ -8,8 +8,19 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.services import pdf_service
+from conftest import make_auth_headers
 
 client = TestClient(app)
+
+_auth = None
+
+
+def _headers():
+    """One logged-in user shared by this module's tests (same tmp DB)."""
+    global _auth
+    if _auth is None:
+        _auth = make_auth_headers(client)
+    return _auth
 
 
 @pytest.fixture(autouse=True)
@@ -72,10 +83,11 @@ def _upload_and_analyze(lines, filename="report.pdf"):
     up = client.post(
         "/api/reports/upload",
         files={"file": (filename, make_pdf(lines), "application/pdf")},
+        headers=_headers(),
     )
     assert up.status_code == 200
     report_id = up.json()["report_id"]
-    an = client.post(f"/api/reports/{report_id}/analyze")
+    an = client.post(f"/api/reports/{report_id}/analyze", headers=_headers())
     assert an.status_code == 200
     return up.json(), an.json()
 
@@ -104,9 +116,18 @@ def test_biomarkers_endpoint():
 
 
 def test_upload_rejects_non_pdf():
+    # No token at all → 401 before the file type is even checked.
+    assert (
+        client.post(
+            "/api/reports/upload",
+            files={"file": ("notes.txt", b"hello", "text/plain")},
+        ).status_code
+        == 401
+    )
     res = client.post(
         "/api/reports/upload",
         files={"file": ("notes.txt", b"hello", "text/plain")},
+        headers=_headers(),
     )
     assert res.status_code == 400
 
@@ -146,11 +167,11 @@ def test_upload_analyze_flow(upload_dir):
     assert analyzed["ai_explanation"] is None
     assert "Hemoglobin" in analyzed["summary"]
 
-    lst = client.get("/api/reports")
+    lst = client.get("/api/reports", headers=_headers())
     assert lst.status_code == 200
     assert any(r["id"] == analyzed["report_id"] for r in lst.json())
 
-    one = client.get(f"/api/reports/{analyzed['report_id']}")
+    one = client.get(f"/api/reports/{analyzed['report_id']}", headers=_headers())
     assert one.status_code == 200
     detail = one.json()
     assert detail["report_date"] == "2026-01-15"
@@ -184,7 +205,7 @@ def test_trends_endpoint(upload_dir):
         ["Report Date: 06/15/2026", "Glucose 115 mg/dL (70-100)"],
         filename="g2.pdf",
     )
-    res = client.get("/api/reports/trends/BM011")
+    res = client.get("/api/reports/trends/BM011", headers=_headers())
     assert res.status_code == 200
     trend = res.json()
     assert trend["biomarker_id"] == "BM011"
@@ -196,9 +217,16 @@ def test_trends_endpoint(upload_dir):
 
 
 def test_trends_endpoint_no_data():
-    assert client.get("/api/reports/trends/BM999").status_code == 404
+    assert client.get("/api/reports/trends/BM999", headers=_headers()).status_code == 404
 
 
 def test_get_missing_report():
-    assert client.get("/api/reports/999999").status_code == 404
-    assert client.post("/api/reports/999999/analyze").status_code == 404
+    assert client.get("/api/reports/999999", headers=_headers()).status_code == 404
+    assert client.post("/api/reports/999999/analyze", headers=_headers()).status_code == 404
+
+
+def test_reports_require_auth():
+    assert client.get("/api/reports").status_code == 401
+    assert client.get("/api/reports/1").status_code == 401
+    assert client.post("/api/reports/1/analyze").status_code == 401
+    assert client.get("/api/reports/trends/BM011").status_code == 401
