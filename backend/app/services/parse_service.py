@@ -299,7 +299,7 @@ def match_biomarker(name: str, spec: list[dict]) -> dict | None:
     # Qualifiers that mark a *different* analyte from the base biomarker.
     _SUBTYPE_QUALIFIERS = {
         "ionized", "ionised", "corrected", "free", "rbc", "serum", "urine",
-        "hs", "ultra", "a1c", "direct", "indirect",
+        "hs", "ultra", "a1c", "direct", "indirect", "ratio",
     }
 
     def _norm(s: str) -> str:

@@ -405,3 +405,20 @@ def test_last_run_notes_when_ai_disabled(monkeypatch):
     out, source = ai_extract_service.extract(CHUNK, SPEC)
     assert source == "rules"
     assert ai_extract_service.last_run["note"] == "ai_disabled_or_empty"
+
+
+def test_match_biomarker_test2_variants_against_real_spec():
+    # Regression: test2.pdf prints "Fasting Blood Sugar" and "Direct LDL";
+    # the matcher must resolve them, and must NOT merge ratio rows into LDL.
+    from app.utils.spec import get_biomarkers
+
+    real = get_biomarkers()
+    assert parse_service.match_biomarker("Fasting Blood Sugar", real)[
+        "standard_name"
+    ] == "Glucose"
+    assert parse_service.match_biomarker("Direct LDL", real)[
+        "standard_name"
+    ] == "LDL"
+    assert parse_service.match_biomarker("LDL/HDL Ratio", real) is None
+    assert parse_service.match_biomarker("CHOL/HDL Ratio", real) is None
+    assert parse_service.match_biomarker("LDL", real)["standard_name"] == "LDL"

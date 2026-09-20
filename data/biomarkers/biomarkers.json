@@ -158,7 +158,10 @@
       "common_aliases": [
         "Blood Glucose",
         "Fasting Glucose",
-        "Serum Glucose"
+        "Serum Glucose",
+        "Fasting Blood Sugar",
+        "FBS",
+        "Blood Sugar"
       ],
       "typical_units": "mg/dL",
       "description": "Blood glucose concentration",
@@ -405,7 +408,8 @@
       "common_aliases": [
         "LDL-C",
         "LDL Cholesterol",
-        "Low-Density Lipoprotein"
+        "Low-Density Lipoprotein",
+        "Direct LDL"
       ],
       "typical_units": "mg/dL",
       "description": "Low-density lipoprotein cholesterol",
