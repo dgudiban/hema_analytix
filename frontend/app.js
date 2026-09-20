@@ -212,8 +212,10 @@ async function handleUpload(event) {
     }
     const uploaded = await upRes.json();
 
-    if (uploaded.note) {
-      note.textContent = uploaded.note;
+    const srcLabel = { image: "Source: photo/scan (OCR).", scanned_pdf: "Source: scanned PDF (OCR).", pdf: null }[uploaded.source_type];
+    const noteText = [srcLabel, uploaded.note].filter(Boolean).join(" ");
+    if (noteText) {
+      note.textContent = noteText;
       note.classList.remove("hidden");
     }
 

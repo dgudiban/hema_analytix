@@ -4,6 +4,7 @@ Every endpoint requires a logged-in patient and only ever touches that
 patient's own reports — no cross-account data is reachable.
 """
 from datetime import date
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
@@ -46,10 +47,17 @@ async def upload_report(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    if not file.filename or not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
-    saved_path = pdf_service.save_upload(file.filename, file.file)
-    text, pages, notes = pdf_service.extract_text(saved_path)
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in pdf_service.ALLOWED_SUFFIXES:
+        raise HTTPException(
+            status_code=400, detail="Only PDF and image files (JPG, PNG) are accepted."
+        )
+    try:
+        saved_path = pdf_service.save_upload(file.filename, file.file)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    ingested = pdf_service.ingest(saved_path)
+    text, pages, notes = ingested["text"], ingested["pages"], ingested["notes"]
     report_date = parse_report_date(text, fallback=date.today())
 
     report = Report(
@@ -57,6 +65,7 @@ async def upload_report(
         filename=saved_path.name,
         raw_text=text,
         report_date=report_date,
+        source_type=ingested["source_type"],
     )
     db.add(report)
     db.commit()
@@ -69,6 +78,7 @@ async def upload_report(
         "text_preview": text[:300],
         "pages": pages,
         "note": "; ".join(notes) if notes else None,
+        "source_type": ingested["source_type"],
     }
 
 

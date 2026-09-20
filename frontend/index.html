@@ -45,9 +45,9 @@
   <main class="container hidden" id="app-view">
     <section class="card" id="upload-card">
       <h2>Upload a blood report</h2>
-      <p class="muted">PDF only. Text is extracted locally; nothing is sent anywhere unless you ask for an AI explanation.</p>
+      <p class="muted">PDF or image (JPG/PNG) — digital PDFs, scanned PDFs, and photos of paper reports. Text is extracted on the server; nothing leaves it unless you ask for an AI explanation.</p>
       <form id="upload-form">
-        <input type="file" id="file-input" accept="application/pdf,.pdf" required />
+        <input type="file" id="file-input" accept="application/pdf,.pdf,.jpg,.jpeg,.png" required />
         <button type="submit" id="upload-btn">Upload &amp; Analyze</button>
       </form>
       <div id="progress" class="muted hidden">Working…</div>

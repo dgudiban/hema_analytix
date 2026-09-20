@@ -27,6 +27,7 @@ class UploadResponse(BaseModel):
     text_preview: str
     pages: int
     note: str | None = None
+    source_type: str = "pdf"  # "pdf" | "scanned_pdf" | "image"
 
 
 class ResultOut(BaseModel):

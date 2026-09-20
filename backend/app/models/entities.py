@@ -41,6 +41,8 @@ class Report(Base):
     raw_text = Column(Text, nullable=True)
     # "ai" when the report's values were transcribed by the LLM, else "rules".
     extraction_source = Column(String(8), nullable=True, default="rules")
+    # "pdf" | "scanned_pdf" | "image" — how the report's text was obtained.
+    source_type = Column(String(16), nullable=True, default="pdf")
 
     results = relationship(
         "Result", back_populates="report", cascade="all, delete-orphan"

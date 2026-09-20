@@ -15,3 +15,5 @@ scikit-learn
 pyjwt
 bcrypt
 email-validator
+pytesseract
+pillow
