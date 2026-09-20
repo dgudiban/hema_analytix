@@ -730,7 +730,19 @@ function addChatBubble(role, text) {
   const log = $("chat-log");
   const div = document.createElement("div");
   div.className = `chat-bubble ${role}`;
-  div.textContent = text;
+  const span = document.createElement("span");
+  span.textContent = text;
+  div.appendChild(span);
+  if (role === "assistant" && text) {
+    const speak = document.createElement("button");
+    speak.type = "button";
+    speak.className = "speak-btn";
+    speak.title = "Listen to this answer";
+    speak.setAttribute("aria-label", "Listen to this answer");
+    speak.textContent = "🔊";
+    speak.addEventListener("click", () => toggleSpeak(text, speak));
+    div.appendChild(speak);
+  }
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
 }
@@ -776,6 +788,106 @@ async function handleChat(e) {
     addChatBubble("assistant", `Sorry — could not get an answer (${err.message}).`);
   }
 }
+
+/* ---- Voice input/output (zero-cost Web Speech API) ---- */
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const TTS = "speechSynthesis" in window ? window.speechSynthesis : null;
+let recognizer = null;
+let listening = false;
+let speakingBtn = null;
+
+function voiceSupported() {
+  return !!(SR || TTS);
+}
+
+function showVoiceNote() {
+  const note = $("voice-note");
+  if (SR && TTS) return; // fully supported
+  note.hidden = false;
+  if (!SR && !TTS) {
+    note.textContent = "Voice input/output isn't supported in this browser — type your question instead.";
+  } else if (!SR) {
+    note.textContent = "Voice input isn't supported in this browser — you can still listen to answers.";
+  } else {
+    note.textContent = "Listening to answers isn't supported in this browser — voice input still works.";
+  }
+}
+
+function stopListening() {
+  if (recognizer && listening) {
+    recognizer.stop();
+  }
+}
+
+function stopSpeaking() {
+  if (TTS) TTS.cancel();
+  if (speakingBtn) {
+    speakingBtn.textContent = "🔊";
+    speakingBtn.title = "Listen to this answer";
+    speakingBtn = null;
+  }
+}
+
+function toggleMic() {
+  if (!SR) return;
+  if (listening) {
+    stopListening();
+    return;
+  }
+  recognizer = new SR();
+  recognizer.lang = "en-US";
+  recognizer.interimResults = false;
+  recognizer.maxAlternatives = 1;
+  const mic = $("chat-mic");
+  recognizer.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    const input = $("chat-input");
+    input.value = (input.value ? input.value + " " : "") + transcript;
+    input.focus();
+  };
+  recognizer.onerror = () => setMicState(false);
+  recognizer.onend = () => setMicState(false);
+  recognizer.start();
+  setMicState(true);
+}
+
+function setMicState(on) {
+  listening = on;
+  const mic = $("chat-mic");
+  mic.classList.toggle("listening", on);
+  mic.title = on ? "Stop listening" : "Ask with your voice";
+}
+
+function toggleSpeak(text, btn) {
+  if (!TTS) return;
+  if (speakingBtn === btn) {
+    stopSpeaking();
+    return;
+  }
+  stopSpeaking();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 1;
+  utter.onend = utter.onerror = () => {
+    if (speakingBtn === btn) {
+      btn.textContent = "🔊";
+      btn.title = "Listen to this answer";
+      speakingBtn = null;
+    }
+  };
+  speakingBtn = btn;
+  btn.textContent = "⏹";
+  btn.title = "Stop";
+  TTS.speak(utter); // user-gesture initiated only; no autoplay
+}
+
+$("chat-mic").addEventListener("click", toggleMic);
+if (!SR) {
+  const mic = $("chat-mic");
+  mic.disabled = true;
+  mic.title = "Voice input not supported in this browser";
+}
+showVoiceNote();
 
 $("chat-form").addEventListener("submit", handleChat);
 

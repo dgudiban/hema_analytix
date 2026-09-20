@@ -226,6 +226,19 @@ select {
 .chat-bubble.thinking { opacity: 0.6; font-style: italic; }
 .chat-form { display: flex; gap: 0.6rem; }
 .chat-form input { flex: 1; }
+.icon-btn {
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  font-size: 1.1rem; padding: 0.45rem 0.6rem; cursor: pointer; line-height: 1;
+}
+.icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.icon-btn.listening { background: #7f1d1d; border-color: #ef4444; animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { opacity: 0.55; } }
+.chat-bubble.assistant { position: relative; padding-right: 2.2rem; }
+.speak-btn {
+  position: absolute; top: 0.35rem; right: 0.45rem;
+  background: none; border: none; cursor: pointer; font-size: 0.95rem; opacity: 0.65;
+}
+.speak-btn:hover { opacity: 1; }
 
 /* ---- Auth ---- */
 .topbar-right { display: flex; align-items: center; gap: 1rem; }
