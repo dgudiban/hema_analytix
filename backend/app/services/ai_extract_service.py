@@ -37,7 +37,8 @@ CHUNK_CHARS = 6000
 MAX_ROWS_PER_CHUNK = 120
 # Pacing between chunk calls keeps a long report under the free-tier
 # tokens-per-minute budget instead of bursting all chunks at once.
-CHUNK_DELAY_SECONDS = 8
+# ~2.4k input tokens per chunk / 20s ~= 7k TPM, inside the 8k window.
+CHUNK_DELAY_SECONDS = 20
 
 _SYSTEM = (
     "You are a precise medical lab data transcriber. You copy printed facts "
