@@ -77,3 +77,26 @@ def test_complete_clears_last_error_on_success(monkeypatch):
     assert text == "ok"
     assert model == llm_client._groq_model()
     assert llm_client.last_error is None
+
+
+def test_groq_429_body_names_limit(monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+    err = requests.HTTPError("429")
+    err.response = Mock(
+        status_code=429,
+        **{
+            "json.return_value": {
+                "error": {
+                    "message": "Rate limit reached for openai/gpt-oss-120b "
+                    "in organization org-abc123 on tokens per minute (TPM): "
+                    "Limit 8000, Used 7900, Requested 3100."
+                }
+            }
+        },
+    )
+    with patch.object(llm_client.requests, "post", side_effect=err):
+        text, tag = llm_client._groq_complete("hi", "sys")
+    assert text is None
+    assert tag.startswith("http_429:Rate limit reached")
+    assert "TPM" in tag and "Limit 8000" in tag
+    assert "org-abc123" not in tag  # org ids are redacted

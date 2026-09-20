@@ -11,6 +11,7 @@ success or a short tag describing every backend failure, e.g.
 report *why* a chunk failed instead of just seeing (None, None).
 """
 import os
+import re
 
 import requests
 
@@ -25,6 +26,28 @@ last_error: str | None = None
 def _groq_model() -> str:
     # Overridable via env; default verified against Groq's free tier.
     return os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+
+
+def _http_error_tag(exc: requests.HTTPError) -> str:
+    """Build an error tag like http_429:<rate-limit detail from the body>.
+
+    Groq's 429 body names the exact limit that tripped, e.g.
+    "Rate limit reached ... on tokens per minute (TPM): Limit 8000,
+    Used 7900, Requested 3100" — far more useful than the bare status.
+    """
+    code = exc.response.status_code if exc.response is not None else "?"
+    tag = f"http_{code}"
+    try:
+        body = exc.response.json() if exc.response is not None else {}
+        err = body.get("error") if isinstance(body, dict) else None
+        msg = err.get("message", "") if isinstance(err, dict) else ""
+        msg = re.sub(r"\s+", " ", str(msg)).strip()
+        msg = re.sub(r"org-[A-Za-z0-9]+", "org-…", msg)  # keep org ids out
+        if msg:
+            tag += ":" + msg[:180]
+    except Exception:
+        pass
+    return tag
 
 
 def _groq_complete(
@@ -53,8 +76,7 @@ def _groq_complete(
     except requests.Timeout:
         return None, "timeout"
     except requests.HTTPError as exc:
-        code = exc.response.status_code if exc.response is not None else "?"
-        return None, f"http_{code}"
+        return None, _http_error_tag(exc)
     except requests.RequestException:
         return None, "request_error"
     try:
@@ -87,8 +109,7 @@ def _gemini_complete(prompt: str, system: str) -> tuple[str | None, str | None]:
     except requests.Timeout:
         return None, "timeout"
     except requests.HTTPError as exc:
-        code = exc.response.status_code if exc.response is not None else "?"
-        return None, f"http_{code}"
+        return None, _http_error_tag(exc)
     except requests.RequestException:
         return None, "request_error"
     try:
@@ -115,8 +136,7 @@ def _ollama_complete(prompt: str, system: str) -> tuple[str | None, str | None]:
     except requests.Timeout:
         return None, "timeout"
     except requests.HTTPError as exc:
-        code = exc.response.status_code if exc.response is not None else "?"
-        return None, f"http_{code}"
+        return None, _http_error_tag(exc)
     except requests.RequestException:
         return None, "request_error"
     try:
