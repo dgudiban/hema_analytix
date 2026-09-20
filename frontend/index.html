@@ -43,18 +43,30 @@
   </main>
 
   <main class="container hidden" id="app-view">
-    <section class="card" id="upload-card">
+    <nav class="tabs" id="tabs" aria-label="Main">
+      <button type="button" class="tab active" data-tab="dashboard">Dashboard</button>
+      <button type="button" class="tab" data-tab="trends">Trends</button>
+      <button type="button" class="tab" data-tab="compare">Compare</button>
+      <button type="button" class="tab" data-tab="ask">Ask BloodIQ</button>
+      <button type="button" class="tab" data-tab="reports">Reports</button>
+      <button type="button" class="tab" data-tab="profile">Profile</button>
+    </nav>
+
+    <section class="card tab-panel" id="upload-card" data-panel="dashboard">
       <h2>Upload a blood report</h2>
       <p class="muted">PDF or image (JPG/PNG) — digital PDFs, scanned PDFs, and photos of paper reports. Text is extracted on the server; nothing leaves it unless you ask for an AI explanation.</p>
       <form id="upload-form">
         <input type="file" id="file-input" accept="application/pdf,.pdf,.jpg,.jpeg,.png" required />
         <button type="submit" id="upload-btn">Upload &amp; Analyze</button>
       </form>
-      <div id="progress" class="muted hidden">Working…</div>
+      <div id="progress" class="hidden">
+        <div class="progress-bar"><div id="progress-fill"></div></div>
+        <p class="muted" id="progress-text">Working…</p>
+      </div>
       <div id="upload-note" class="note hidden"></div>
     </section>
 
-    <section class="card hidden" id="summary-card">
+    <section class="card hidden tab-panel" id="summary-card" data-panel="dashboard">
       <h2>Report analyzed ✓</h2>
       <p class="muted" id="summary-meta"></p>
       <div class="summary-top">
@@ -73,10 +85,14 @@
       </div>
     </section>
 
-    <section class="card hidden" id="results-card">
+    <section class="card hidden tab-panel" id="results-card" data-panel="dashboard">
       <div class="results-head">
         <h2 id="report-title">Report</h2>
-        <button id="explain-btn" class="secondary">Explain with AI</button>
+        <div class="btn-row">
+          <button id="prev-report-btn" class="secondary" type="button" title="Previous report">← Prev</button>
+          <button id="next-report-btn" class="secondary" type="button" title="Next report">Next →</button>
+          <button id="explain-btn" class="secondary">Explain with AI</button>
+        </div>
       </div>
       <div id="results-groups"></div>
 
@@ -86,7 +102,7 @@
       </div>
     </section>
 
-    <section class="card" id="trends-card">
+    <section class="card tab-panel" id="trends-card" data-panel="trends">
       <h2>Trends</h2>
       <p class="muted">Pick a biomarker to see how it changed across your reports.</p>
       <form id="trend-form">
@@ -101,7 +117,7 @@
       <p id="trend-empty" class="muted">No trend data yet — upload at least one report first.</p>
     </section>
 
-    <section class="card" id="compare-card">
+    <section class="card tab-panel" id="compare-card" data-panel="compare">
       <h2>Compare reports</h2>
       <p class="muted">Pick two reports to see what changed between them. Arrows show direction only — an increase is not automatically better, a decrease not automatically worse.</p>
       <form id="compare-form">
@@ -121,12 +137,20 @@
       <p id="compare-empty" class="muted">Upload at least two reports to compare them.</p>
     </section>
 
-    <section class="card" id="history-card">
+    <section class="card tab-panel" id="history-card" data-panel="reports">
       <h2>Recent reports</h2>
       <ul id="history-list" class="history"></ul>
     </section>
 
-    <section class="card" id="chat-card">
+    <section class="card tab-panel" id="profile-card" data-panel="profile">
+      <h2>Profile</h2>
+      <p><strong>Name:</strong> <span id="profile-name"></span></p>
+      <p><strong>Email:</strong> <span id="profile-email"></span></p>
+      <p class="muted small">Your reports and chat stay private to this account.</p>
+      <button id="profile-logout-btn" type="button" class="secondary">Logout</button>
+    </section>
+
+    <section class="card tab-panel" id="chat-card" data-panel="ask">
       <h2>Ask about your results</h2>
       <p class="muted">Grounded answers use your reports plus curated knowledge. Baseline answers come from the AI alone, for comparison.</p>
       <div class="chat-mode">

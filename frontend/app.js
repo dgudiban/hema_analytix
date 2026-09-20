@@ -40,6 +40,8 @@ function showApp(user) {
   $("app-view").classList.remove("hidden");
   $("user-chip").classList.remove("hidden");
   $("user-name").textContent = `👤 ${user.name}`;
+  loadProfile();
+  switchTab("dashboard");
   loadHistory();
   loadTrend();
   loadCompareReports();
@@ -400,17 +402,65 @@ function escapeHtml(s) {
   }[c]));
 }
 
+let uploading = false;
+
+function fmtElapsed(ms) {
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+// Staged progress for the long analyze call. Stages are illustrative — the
+// server does this work in one request, so we rotate labels while it runs.
+const ANALYZE_STAGES = [
+  [0, 8, "Extracting text from your report…"],
+  [8, 35, "AI transcribing result rows…"],
+  [35, 60, "Matching biomarkers to the lab panel…"],
+  [60, 85, "Calculating statuses and summaries…"],
+  [85, 99, "Finalizing your results…"],
+];
+let progressTimer = null;
+function startProgress(kind) {
+  const wrap = $("progress");
+  const text = $("progress-text");
+  const fill = $("progress-fill");
+  wrap.classList.remove("hidden");
+  const t0 = Date.now();
+  clearInterval(progressTimer);
+  if (kind === "upload") {
+    fill.style.width = "40%";
+    text.textContent = "Uploading…";
+    return;
+  }
+  fill.style.width = "5%";
+  let pct = 5;
+  progressTimer = setInterval(() => {
+    const el = Date.now() - t0;
+    pct = Math.min(97, pct + 2);
+    fill.style.width = pct + "%";
+    const stage = ANALYZE_STAGES.find(([lo, hi]) => pct >= lo && pct < hi);
+    text.textContent = `${stage ? stage[2] : "Working…"} (${fmtElapsed(el)} elapsed)`;
+  }, 1500);
+}
+function stopProgress() {
+  clearInterval(progressTimer);
+  progressTimer = null;
+  $("progress").classList.add("hidden");
+  $("progress-fill").style.width = "0%";
+  $("progress-text").textContent = "Working…";
+}
+
 async function handleUpload(event) {
   event.preventDefault();
+  if (uploading) return; // duplicate-submit guard
   const file = $("file-input").files[0];
   if (!file) return;
+  uploading = true;
 
   const btn = $("upload-btn");
-  const progress = $("progress");
   const note = $("upload-note");
   btn.disabled = true;
-  progress.classList.remove("hidden");
   note.classList.add("hidden");
+  startProgress("upload");
 
   try {
     const form = new FormData();
@@ -439,12 +489,13 @@ async function handleUpload(event) {
     await loadHistory();
     await loadTrend(); // a new report may add trend points
     await loadCompareReports();
+    switchTab("dashboard");
   } catch (err) {
     alert(`Error: ${err.message}`);
   } finally {
+    stopProgress();
     btn.disabled = false;
-    progress.classList.add("hidden");
-    progress.textContent = "Working…";
+    uploading = false;
   }
 }
 
@@ -463,6 +514,34 @@ async function handleExplain() {
   panel.scrollIntoView({ behavior: "smooth" });
 }
 
+async function loadReport(id) {
+  const dRes = await api(`/api/reports/${id}`);
+  if (!dRes.ok) throw new Error(`HTTP ${dRes.status}`);
+  const detail = await dRes.json();
+  renderResults({
+    report_id: detail.id,
+    report_date: detail.report_date,
+    results: detail.results,
+    summary: detail.summary || `Saved analysis of ${detail.filename}: ${detail.results.length} biomarker(s).`,
+    ai_explanation: null,
+    extraction_source: detail.extraction_source || "rules",
+  });
+}
+
+let reportIds = []; // newest-first, for prev/next navigation
+
+async function stepReport(dir) {
+  if (!reportIds.length || lastReportId === null) return;
+  const i = reportIds.indexOf(lastReportId);
+  const j = i + dir;
+  if (j < 0 || j >= reportIds.length) return;
+  try {
+    await loadReport(reportIds[j]);
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+}
+
 async function loadHistory() {
   const list = $("history-list");
   try {
@@ -473,24 +552,27 @@ async function loadHistory() {
       list.innerHTML = `<li class="muted">No reports yet.</li>`;
       return;
     }
-    for (const r of reports) {
+    reportIds = reports.map((r) => r.id);
+    for (const [idx, r] of reports.entries()) {
       const li = document.createElement("li");
       const link = document.createElement("a");
       link.href = "#";
       const when = r.report_date ? ` · ${r.report_date}` : "";
       link.textContent = `#${r.id} ${r.filename}${when} (${r.result_count} results)`;
+      if (idx === 0) {
+        const badge = document.createElement("span");
+        badge.className = "latest-badge";
+        badge.textContent = " Latest";
+        link.appendChild(badge);
+      }
       link.addEventListener("click", async (e) => {
         e.preventDefault();
-        const dRes = await api(`/api/reports/${r.id}`);
-        const detail = await dRes.json();
-        renderResults({
-          report_id: detail.id,
-          report_date: detail.report_date,
-          results: detail.results,
-          summary: detail.summary || `Saved analysis of ${detail.filename}: ${detail.results.length} biomarker(s).`,
-          ai_explanation: null,
-          extraction_source: detail.extraction_source || "rules",
-        });
+        try {
+          await loadReport(r.id);
+          switchTab("dashboard");
+        } catch (err) {
+          alert(`Error: ${err.message}`);
+        }
       });
       li.appendChild(link);
       list.appendChild(li);
@@ -891,11 +973,37 @@ showVoiceNote();
 
 $("chat-form").addEventListener("submit", handleChat);
 
+/* ---- Tabs, profile, navigation wiring ---- */
+
+function switchTab(name) {
+  document.querySelectorAll("#tabs .tab").forEach((t) =>
+    t.classList.toggle("active", t.dataset.tab === name)
+  );
+  document.querySelectorAll(".tab-panel").forEach((p) => {
+    const show = p.dataset.panel === name;
+    p.classList.toggle("hidden", !show);
+  });
+  $("app-view").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function loadProfile() {
+  const user = currentUser();
+  if (!user) return;
+  $("profile-name").textContent = user.name || "";
+  $("profile-email").textContent = user.email || "";
+}
+
 $("upload-form").addEventListener("submit", handleUpload);
+document.querySelectorAll("#tabs .tab").forEach((t) =>
+  t.addEventListener("click", () => switchTab(t.dataset.tab))
+);
 $("view-results-btn").addEventListener("click", () =>
-  $("results-card").scrollIntoView({ behavior: "smooth" }));
+  switchTab("dashboard"));
 $("ask-about-btn").addEventListener("click", () =>
-  $("chat-card").scrollIntoView({ behavior: "smooth" }));
+  switchTab("ask"));
+$("prev-report-btn").addEventListener("click", () => stepReport(1));
+$("next-report-btn").addEventListener("click", () => stepReport(-1));
+$("profile-logout-btn").addEventListener("click", logout);
 $("explain-btn").addEventListener("click", handleExplain);
 $("trend-form").addEventListener("submit", (e) => { e.preventDefault(); loadTrend(); });
 $("trend-select").addEventListener("change", loadTrend);
