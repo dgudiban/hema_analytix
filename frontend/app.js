@@ -52,12 +52,13 @@ function renderResults(data) {
       <td><strong>${r.value}</strong></td>
       <td>${escapeHtml(r.unit)}</td>
       <td>${escapeHtml(fmtRange(r))}</td>
+      <td>${r.flag ? escapeHtml(r.flag) : "—"}</td>
       <td><span class="pill ${r.status.toLowerCase()}">${r.status}</span></td>`;
     body.appendChild(tr);
   }
 
   if (data.results.length === 0) {
-    body.innerHTML = `<tr><td colspan="5" class="muted">No biomarkers found in this PDF's text.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="6" class="muted">No biomarkers found in this PDF's text.</td></tr>`;
   }
   $("results-card").scrollIntoView({ behavior: "smooth" });
 }

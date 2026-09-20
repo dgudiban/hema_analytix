@@ -13,12 +13,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api import biomarkers, chat, reports
-from app.models.db import engine
+from app.models.db import engine, ensure_columns
 from app.models.entities import Base  # noqa: F401  (registers the tables)
 from app.utils.paths import project_root
 
 # Create tables on startup (no migrations needed for this scope).
 Base.metadata.create_all(bind=engine)
+# Backfill columns added after older databases were created.
+ensure_columns()
 
 app = FastAPI(title="BloodIQ", version="1.0.0")
 

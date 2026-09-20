@@ -42,6 +42,8 @@ class Result(Base):
     # Report-specific reference range; both null when the report has none.
     ref_low = Column(Float, nullable=True)
     ref_high = Column(Float, nullable=True)
+    # The lab's own printed flag word (Low/High/Borderline/...), if any.
+    flag = Column(String(12), nullable=True)
     # "reported" | "calculated"
     source = Column(String(12), nullable=False, default="reported")
     # Derivation description for calculated rows, e.g. "total_cholesterol − hdl".

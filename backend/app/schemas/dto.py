@@ -38,6 +38,7 @@ class ResultOut(BaseModel):
     status: str  # "LOW" | "NORMAL" | "HIGH" | "unknown"
     ref_low: float | None = None
     ref_high: float | None = None
+    flag: str | None = None  # lab's printed flag word, e.g. "Low"
     source: str  # "reported" | "calculated"
     method: str | None = None
 

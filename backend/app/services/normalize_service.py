@@ -48,6 +48,7 @@ def add_calculated(results: list[dict]) -> list[dict]:
                     "unit": tc["unit"],
                     "ref_low": None,
                     "ref_high": None,
+                    "flag": None,
                     "source": "calculated",
                     "method": (
                         f"total_cholesterol (BM027) {tc['value']} − "
@@ -74,6 +75,7 @@ def add_calculated(results: list[dict]) -> list[dict]:
                     "unit": "%",
                     "ref_low": None,
                     "ref_high": None,
+                    "flag": None,
                     "source": "calculated",
                     "method": (
                         f"serum_iron (BM035) {iron['value']} / "

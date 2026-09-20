@@ -80,12 +80,15 @@ def test_biomarkers_endpoint():
     res = client.get("/api/biomarkers")
     assert res.status_code == 200
     data = res.json()
-    assert len(data) == 45
+    assert len(data) == 46
     bm001 = next(b for b in data if b["biomarker_id"] == "BM001")
     assert bm001["standard_name"] == "Hemoglobin"
     assert bm001["common_aliases"] == ["Hb", "HGB", "Hemoglobin"]
     assert bm001["typical_units"] == "g/dL"
     assert bm001["supports_trend"] is True
+    bm046 = next(b for b in data if b["biomarker_id"] == "BM046")
+    assert bm046["standard_name"] == "Packed Cell Volume"
+    assert "PCV" in bm046["common_aliases"]
     # No hard-coded reference ranges anywhere in the spec payload.
     assert all("ref_low" not in b and "ref_high" not in b for b in data)
 

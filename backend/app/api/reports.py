@@ -77,13 +77,16 @@ def analyze_report(report_id: int, db: Session = Depends(get_db)):
                 status=item["status"],
                 ref_low=item.get("ref_low"),
                 ref_high=item.get("ref_high"),
+                flag=item.get("flag"),
                 source=item["source"],
                 method=item.get("method"),
             )
         )
     db.commit()
 
-    summary = analysis_service.summarize(analyzed)
+    summary = analysis_service.summarize(
+        analyzed, interpretation=parse_service.extract_interpretation(report.raw_text or "")
+    )
     ai_explanation = ai_service.explain_report(analyzed, summary)
 
     return {

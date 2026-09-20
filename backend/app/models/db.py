@@ -27,6 +27,24 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
 
+def ensure_columns() -> None:
+    """Lightweight migration for columns added after a DB was created.
+
+    ``create_all`` never alters existing tables, so a column added to a
+    model (e.g. ``results.flag``) would otherwise be missing on databases
+    created by an older build. Runs at startup; safe to call repeatedly.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    if "results" not in inspector.get_table_names():
+        return
+    existing = {col["name"] for col in inspector.get_columns("results")}
+    if "flag" not in existing:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE results ADD COLUMN flag VARCHAR(12)"))
+
+
 def get_db():
     """FastAPI dependency: yields a session and closes it after the request."""
     db = SessionLocal()

@@ -41,10 +41,12 @@ def _by_id(parsed, biomarker_id):
     return next(p for p in parsed if p["biomarker_id"] == biomarker_id)
 
 
-def test_spec_has_45_entries(spec):
+def test_spec_entries(spec):
     ids = [b["biomarker_id"] for b in spec]
-    assert len(spec) == 45
-    assert ids[0] == "BM001" and ids[-1] == "BM045"
+    assert len(spec) == 46
+    assert ids[0] == "BM001" and ids[-1] == "BM046"
+    # No hard-coded reference-range keys anywhere in the spec entries.
+    assert all("ref_low" not in b and "ref_high" not in b for b in spec)
     # No hard-coded reference-range keys anywhere in the spec entries.
     assert all("ref_low" not in b and "ref_high" not in b for b in spec)
 
@@ -245,3 +247,81 @@ def test_summary_text(spec):
 def test_empty_text(spec):
     assert parse_service.parse_text("", spec) == []
     assert analysis_service.summarize([]) == "Analyzed 0 biomarker(s): 0 normal."
+
+
+def test_parenthetical_alias_and_bare_range(spec):
+    # Drlogy-style line: "Hemoglobin (Hb) 12.5 Low 13.0 - 17.0 g/dL"
+    parsed = parse_service.parse_text(
+        "Hemoglobin (Hb) 12.5 Low 13.0 - 17.0 g/dL", spec
+    )
+    assert len(parsed) == 1
+    hgb = parsed[0]
+    assert hgb["biomarker_id"] == "BM001"
+    assert hgb["value"] == pytest.approx(12.5)
+    assert hgb["ref_low"] == pytest.approx(13.0)
+    assert hgb["ref_high"] == pytest.approx(17.0)
+    assert hgb["flag"] == "Low"
+
+
+def test_bare_range_no_spaces(spec):
+    parsed = parse_service.parse_text(
+        "Total WBC count 9000 4000-11000 cumm", spec
+    )
+    wbc = next(p for p in parsed if p["biomarker_id"] == "BM003")
+    assert wbc["value"] == pytest.approx(9000.0)
+    assert wbc["ref_low"] == pytest.approx(4000.0)
+    assert wbc["ref_high"] == pytest.approx(11000.0)
+
+
+def test_pcv_extraction_and_high_status(spec):
+    parsed = parse_service.parse_text(
+        "Packed Cell Volume (PCV) 57.5 High 40 - 50 %", spec
+    )
+    pcv = next(p for p in parsed if p["biomarker_id"] == "BM046")
+    assert pcv["value"] == pytest.approx(57.5)
+    assert pcv["ref_low"] == pytest.approx(40.0)
+    assert pcv["ref_high"] == pytest.approx(50.0)
+    assert pcv["flag"] == "High"
+    analyzed = analysis_service.analyze(
+        normalize_service.normalize(parsed)
+    )
+    pcv_a = next(r for r in analyzed if r["biomarker_id"] == "BM046")
+    assert pcv_a["status"] == "HIGH"
+
+
+def test_flag_fallback_status_without_range(spec):
+    # No range printed: the lab's own flag is transcribed, not "unknown".
+    analyzed = analysis_service.analyze(
+        normalize_service.normalize(
+            parse_service.parse_text("Hemoglobin 12.5 g/dL Low", spec)
+        )
+    )
+    assert analyzed[0]["status"] == "LOW"
+    assert analyzed[0]["flag"] == "Low"
+
+
+def test_extract_interpretation():
+    text = "Hemoglobin 12.5 g/dL\nInterpretation: Further confirm for Anemia\nEnd of Report"
+    assert parse_service.extract_interpretation(text) == "Further confirm for Anemia"
+    assert parse_service.extract_interpretation("no interpretation here") is None
+
+
+def test_summary_findings_format(spec):
+    analyzed = analysis_service.analyze(
+        normalize_service.normalize(
+            parse_service.parse_text(
+                "Hemoglobin (Hb) 12.5 Low 13.0 - 17.0 g/dL\n"
+                "Packed Cell Volume (PCV) 57.5 High 40 - 50 %\n"
+                "WBC 6500 /uL 4000-11000",
+                spec,
+            )
+        )
+    )
+    summary = analysis_service.summarize(
+        analyzed, interpretation="Further confirm for Anemia"
+    )
+    assert "2 outside reference range" in summary
+    assert "Hemoglobin LOW at 12.5 g/dL (ref 13–17, lab flag: Low)" in summary
+    assert "Packed Cell Volume HIGH at 57.5 % (ref 40–50, lab flag: High)" in summary
+    assert "Lab interpretation: Further confirm for Anemia." in summary
+    assert "not a diagnosis" in summary

@@ -662,6 +662,22 @@
       "supports_trend": true,
       "calculation_type": "Calculated/Reported",
       "special_handling": "May be reported with an equation or calculation method; do not treat as an ordinary analyte reference range."
+    },
+    {
+      "biomarker_id": "BM046",
+      "standard_name": "Packed Cell Volume",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "PCV",
+        "Packed Cell Volume",
+        "Hematocrit",
+        "HCT"
+      ],
+      "typical_units": "%",
+      "description": "Proportion of blood volume occupied by red blood cells",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range; preserve original unit."
     }
   ]
 }

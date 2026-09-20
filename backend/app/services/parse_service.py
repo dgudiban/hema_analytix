@@ -22,6 +22,14 @@ _NUMBER = r"(?P<value>\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)"
 # Same, without a capture-group name (for embedding inside range patterns).
 _RANGE_NUM = r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?"
 
+# Lab-printed abnormality flags, e.g. "12.5 Low 13.0 - 17.0 g/dL".
+_FLAG_WORDS = r"[Ll]ow|[Hh]igh|[Bb]orderline|[Nn]ormal|[Aa]bnormal"
+_FLAG_RE = re.compile(rf"\b({_FLAG_WORDS})\b")
+
+# Optional "(ABBR)" between a biomarker name and its value,
+# e.g. "Hemoglobin (Hb) 12.5" or "Packed Cell Volume (PCV) 57.5".
+_PAREN_ABBR = r"(?:\s*\([^()\n]{1,16}\))?"
+
 # Curated unit vocabulary — deliberately restrictive so a following word
 # (e.g. the next line's biomarker name) is never swallowed as a "unit".
 _UNIT_TOKEN = (
@@ -34,6 +42,8 @@ _UNIT_TOKEN = (
 _SEP = r"\s*[:=\-–]?\s*"
 
 # Reference-range shapes found after the value/unit on the same line.
+# Bare "lo - hi" covers reports that print the range with no parens and no
+# "Ref" label, e.g. "12.5 Low 13.0 - 17.0 g/dL" or "9000 4000-11000 cumm".
 _PAREN_RANGE = re.compile(
     r"\(\s*(?P<lo>" + _RANGE_NUM + r")\s*(?:-|–|to)\s*(?P<hi>" + _RANGE_NUM + r")\s*\)"
 )
@@ -43,6 +53,11 @@ _REF_RANGE = re.compile(
 )
 _ONE_SIDED = re.compile(
     r"\(?\s*(?P<comp>[<>≤≥]=?)\s*(?P<num>" + _RANGE_NUM + r")\s*\)?"
+)
+_BARE_RANGE = re.compile(
+    r"(?:\b(?:" + _FLAG_WORDS + r")\b\s+)?"
+    r"(?P<lo>" + _RANGE_NUM + r")\s*(?:-|–|to)\s*(?P<hi>" + _RANGE_NUM + r")"
+    r"(?=\s*(?:" + _UNIT_TOKEN + r")?(?!\w))"
 )
 
 
@@ -69,9 +84,10 @@ def _is_guarded_subtype(biomarker_id: str, text: str, start: int) -> bool:
 
 def _alias_pattern(alias: str) -> re.Pattern:
     # Hyphen-aware boundaries: "hs-CRP" must not match alias "CRP",
-    # "RDW-SD" must not match alias "RDW".
+    # "RDW-SD" must not match alias "RDW". An optional "(ABBR)" may sit
+    # between the name and the value: "Hemoglobin (Hb) 12.5".
     return re.compile(
-        rf"(?<![\w-])(?P<alias>{re.escape(alias)})(?![\w-]){_SEP}{_NUMBER}"
+        rf"(?<![\w-])(?P<alias>{re.escape(alias)})(?![\w-]){_PAREN_ABBR}{_SEP}{_NUMBER}"
         rf"\s?(?P<unit>{_UNIT_TOKEN})?(?!\w)",
         re.IGNORECASE,
     )
@@ -109,6 +125,7 @@ def _parse_reference_range(suffix: str) -> tuple[float | None, float | None]:
         ("two", _PAREN_RANGE),
         ("two", _REF_RANGE),
         ("one", _ONE_SIDED),
+        ("two", _BARE_RANGE),
     ):
         match = pattern.search(suffix)
         if match and (best is None or match.start() < best[0]):
@@ -123,6 +140,25 @@ def _parse_reference_range(suffix: str) -> tuple[float | None, float | None]:
     if comp.startswith((">", "≥")):
         return num, None
     return None, num
+
+
+def _parse_flag(suffix: str) -> str | None:
+    """The lab's own printed flag (Low/High/Borderline/...) after the value.
+
+    This is transcription of report text, never a computed judgment.
+    """
+    match = _FLAG_RE.search(suffix[:80])
+    if not match:
+        return None
+    return match.group(1)[0].upper() + match.group(1)[1:].lower()
+
+
+def extract_interpretation(text: str) -> str | None:
+    """The lab's own "Interpretation:" line, quoted verbatim when present."""
+    match = re.search(r"(?im)^\s*interpretation\s*:\s*(.+?)\s*$", text)
+    if not match:
+        return None
+    return match.group(1).strip() or None
 
 
 def _line_suffix(text: str, end: int) -> str:
@@ -146,9 +182,10 @@ def parse_text(text: str, spec: list[dict]) -> list[dict]:
     into the wrong entry.
 
     Returns dicts {biomarker_id, standard_name, original_name, value, unit,
-    ref_low, ref_high} in spec order. ``original_name`` is the test name as
-    written in the report (traceability). When the text has no unit after the
-    number, the spec's ``typical_units`` is used.
+    ref_low, ref_high, flag} in spec order. ``original_name`` is the test name
+    as written in the report (traceability); ``flag`` is the lab's own printed
+    flag word (Low/High/Borderline/...) when present, else None. When the text
+    has no unit after the number, the spec's ``typical_units`` is used.
     """
     consumed: list[tuple[int, int]] = []
     found: dict[str, dict] = {}
@@ -174,7 +211,8 @@ def parse_text(text: str, spec: list[dict]) -> list[dict]:
             if value is None:
                 continue
             raw_unit = (match.group("unit") or "").strip()
-            ref_low, ref_high = _parse_reference_range(_line_suffix(text, end))
+            suffix = _line_suffix(text, end)
+            ref_low, ref_high = _parse_reference_range(suffix)
             consumed.append((start, end))
             found[bid] = {
                 "biomarker_id": bid,
@@ -184,6 +222,7 @@ def parse_text(text: str, spec: list[dict]) -> list[dict]:
                 "unit": raw_unit or bm["typical_units"],
                 "ref_low": ref_low,
                 "ref_high": ref_high,
+                "flag": _parse_flag(suffix),
             }
             break  # first good match per biomarker
 
@@ -215,6 +254,7 @@ def parse_text(text: str, spec: list[dict]) -> list[dict]:
                 "unit": raw_unit or bm["typical_units"],
                 "ref_low": ref_low,
                 "ref_high": ref_high,
+                "flag": _parse_flag(_line_suffix(text, match.end())),
             }
             break
 

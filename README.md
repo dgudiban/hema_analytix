@@ -12,7 +12,7 @@ pinned: false
 
 A full-stack blood-report analytics app: upload a blood-test PDF → extract text
 with PyMuPDF → find lab results **with the reference ranges printed on that
-report** → normalize to the 45-biomarker spec → flag LOW / NORMAL / HIGH /
+report** → normalize to the 46-biomarker spec → flag LOW / NORMAL / HIGH /
 unknown → optional AI explanation → trend charts → simple web UI.
 
 Built at **zero cost**: every library is free and open source; AI and hosting
@@ -119,7 +119,7 @@ future RAG knowledge base; the app itself works identically on either database.
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/health` | `{"status": "ok"}` |
-| GET | `/api/biomarkers` | Full 45-biomarker spec (from the xlsx) |
+| GET | `/api/biomarkers` | Full 46-biomarker spec (from the xlsx) |
 | POST | `/api/reports/upload` | Multipart PDF → `{report_id, filename, report_date, text_preview, pages, note}` |
 | POST | `/api/reports/{id}/analyze` | Parse + normalize + analyze → results, summary, `ai_explanation` (may be null) |
 | GET | `/api/reports` | List reports with result counts and report dates |
