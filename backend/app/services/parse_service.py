@@ -289,15 +289,25 @@ def match_biomarker(name: str, spec: list[dict]) -> dict | None:
     """Deterministically map a free-text test name to a biomarker spec entry.
 
     Used by the AI extraction path: the LLM transcribes the printed test name,
-    this code (not the LLM) decides which spec biomarker it is — longest alias
-    first, exact normalized match only. No match means the row is dropped,
-    exactly like the rule-based parser drops names it cannot resolve, so a
-    subtype (e.g. "Ionized Calcium") can never merge into the wrong entry.
+    this code (not the LLM) decides which spec biomarker it is. Exact
+    normalized match wins first; then a token-subset fallback handles printed
+    variants like "25(OH) Vitamin D" -> "Vitamin D". The fallback refuses
+    names carrying a subtype qualifier (e.g. "Ionized Calcium" never merges
+    into "Calcium"), so a name with no safe match returns None and the row is
+    dropped — exactly like the rule-based parser drops names it cannot resolve.
     """
+    # Qualifiers that mark a *different* analyte from the base biomarker.
+    _SUBTYPE_QUALIFIERS = {
+        "ionized", "ionised", "corrected", "free", "rbc", "serum", "urine",
+        "hs", "ultra", "a1c", "direct", "indirect",
+    }
+
     def _norm(s: str) -> str:
         s = re.sub(r"\s+", " ", (s or "")).strip().lower()
-        s = re.sub(r"\s*\([^)]*\)\s*", " ", s)  # drop "(Hb)"-style abbreviations
-        return re.sub(r"\s+", " ", s).strip()
+        return s
+
+    def _tokens(s: str) -> list[str]:
+        return re.findall(r"[a-z0-9]+", s)
 
     target = _norm(name)
     if not target:
@@ -305,9 +315,26 @@ def match_biomarker(name: str, spec: list[dict]) -> dict | None:
     jobs = []
     for bm in spec:
         for alias in [n for n in [bm["standard_name"], *bm["common_aliases"]] if n]:
-            jobs.append((len(alias), bm, _norm(alias)))
+            norm_alias = _norm(re.sub(r"\s*\([^)]*\)\s*", " ", alias))
+            jobs.append((len(norm_alias), bm, norm_alias))
     jobs.sort(key=lambda job: -job[0])  # longest alias first
+
+    # Pass 1: exact normalized match (parentheticals like "(Hb)" ignored).
     for _, bm, alias in jobs:
         if alias and alias == target:
             return bm
+
+    # Pass 2: token-subset — every token of the alias appears in the name.
+    target_tokens = set(_tokens(target))
+    for _, bm, alias in jobs:
+        alias_tokens = _tokens(alias)
+        if not alias_tokens or not set(alias_tokens) <= target_tokens:
+            continue
+        extra = target_tokens - set(alias_tokens)
+        # A subtype qualifier in the extra tokens vetoes the merge, unless the
+        # canonical name itself carries that qualifier (e.g. "Free T4").
+        canonical_tokens = set(_tokens(_norm(bm["standard_name"])))
+        if extra & _SUBTYPE_QUALIFIERS - canonical_tokens:
+            continue
+        return bm
     return None

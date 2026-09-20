@@ -24,6 +24,24 @@ SPEC = [
         "common_aliases": [],
         "typical_units": "mg/dL",
     },
+    {
+        "biomarker_id": "BM020",
+        "standard_name": "Vitamin D",
+        "common_aliases": ["25-OH Vitamin D", "25 Hydroxy Vitamin D"],
+        "typical_units": "ng/mL",
+    },
+    {
+        "biomarker_id": "BM021",
+        "standard_name": "HbA1c",
+        "common_aliases": ["Hemoglobin A1c", "Glycated Hemoglobin"],
+        "typical_units": "%",
+    },
+    {
+        "biomarker_id": "BM022",
+        "standard_name": "Vitamin B12",
+        "common_aliases": ["Cobalamin"],
+        "typical_units": "pg/mL",
+    },
 ]
 
 CHUNK = (
@@ -134,8 +152,39 @@ def test_match_biomarker_exact_and_alias():
 def test_match_biomarker_never_merges_subtype():
     # "Ionized Calcium" must NOT resolve to Calcium (BM010).
     assert parse_service.match_biomarker("Ionized Calcium", SPEC) is None
-    assert parse_service.match_biomarker("Vitamin D", SPEC) is None
+    assert parse_service.match_biomarker("Calcium", SPEC)["biomarker_id"] == "BM010"
     assert parse_service.match_biomarker("", SPEC) is None
+    # Printed variant with extra tokens still resolves to the right entry...
+    assert (
+        parse_service.match_biomarker("25(OH) Vitamin D", SPEC)["biomarker_id"]
+        == "BM020"
+    )
+    # ...but a qualifier that marks a different analyte vetoes the merge.
+    assert (
+        parse_service.match_biomarker("Hemoglobin A1c", SPEC)["biomarker_id"]
+        == "BM021"
+    )
+    assert (
+        parse_service.match_biomarker("Glycated Hemoglobin", SPEC)["biomarker_id"]
+        == "BM021"
+    )
+
+
+def test_value_with_comparison_operator_is_kept():
+    chunk = "Vitamin B12\nL\npg/mL\n187 - 833\nCLIA\n< 148\n"
+    rows = [
+        {"test": "Vitamin B12", "value": "<148", "unit": "pg/mL",
+         "ref_low": 187.0, "ref_high": 833.0, "flag": "L"},
+    ]
+    with patch.object(
+        ai_extract_service.llm_client, "complete",
+        return_value=_ai_json(rows),
+    ), patch.object(ai_extract_service.time, "sleep"):
+        out, source = ai_extract_service.extract(chunk, SPEC)
+    assert source == "ai"
+    assert out[0]["value"] == 148.0
+    assert out[0]["flag"] == "Low"
+    assert out[0]["standard_name"] == "Vitamin B12"
 
 
 def test_flag_normalization():
@@ -149,6 +198,16 @@ def test_flag_normalization():
     ):
         out, _ = ai_extract_service.extract(chunk, SPEC)
     assert out[0]["flag"] == "High"
+
+
+def test_unit_alias_normalization():
+    row = ai_extract_service._validate_row(
+        {"test": "Hemoglobin", "value": 14.5, "unit": "micro g/dL",
+         "ref_low": 13.0, "ref_high": 16.5, "flag": None},
+        "Hemoglobin micro g/dL 14.5",
+        SPEC,
+    )
+    assert row["unit"] == "µg/dL"
 
 
 def test_extract_json_handles_fences():
