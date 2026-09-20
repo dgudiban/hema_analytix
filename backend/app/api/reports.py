@@ -101,6 +101,7 @@ def analyze_report(report_id: int, db: Session = Depends(get_db)):
         "summary": summary,
         "ai_explanation": ai_explanation,
         "extraction_source": extraction_source,
+        "extraction_detail": ai_extract_service.last_run,
     }
 
 

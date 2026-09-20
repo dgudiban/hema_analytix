@@ -329,3 +329,79 @@ def test_backoff_stops_after_first_failed_chunk():
     # Second chunk: single attempt, no backoff (backend already unreachable).
     assert complete.call_count == 5
     assert source == "rules" and out == []
+
+
+def test_last_run_reports_chunk_outcome():
+    rows = [
+        {"test": "Hemoglobin", "value": 14.5, "unit": "g/dL",
+         "ref_low": 13.0, "ref_high": 16.5, "flag": None},
+    ]
+    with patch.object(
+        ai_extract_service.llm_client, "complete", return_value=_ai_json(rows)
+    ):
+        out, source = ai_extract_service.extract(CHUNK, SPEC)
+    assert source == "ai"
+    assert ai_extract_service.last_run == {
+        "chunks": 1,
+        "ai_chunks": 1,
+        "failed_chunks": 0,
+        "fail_reasons": [],
+    }
+
+
+def test_last_run_records_failure_reason(monkeypatch):
+    monkeypatch.setattr(
+        ai_extract_service.llm_client,
+        "complete",
+        lambda *a, **k: (None, None),
+    )
+    monkeypatch.setattr(
+        ai_extract_service.llm_client, "last_error", "groq:http_429"
+    )
+    with patch.object(ai_extract_service.time, "sleep"), patch.object(
+        parse_service, "parse_text", return_value=[]
+    ):
+        out, source = ai_extract_service.extract(CHUNK, SPEC)
+    assert source == "rules" and out == []
+    assert ai_extract_service.last_run["chunks"] == 1
+    assert ai_extract_service.last_run["ai_chunks"] == 0
+    assert ai_extract_service.last_run["failed_chunks"] == 1
+    assert ai_extract_service.last_run["fail_reasons"] == ["groq:http_429"]
+
+
+def test_last_run_mixed_chunks(monkeypatch):
+    # Chunk 0 transcribes via AI; chunk 1 is rate-limited and rule-parsed.
+    text = _two_chunk_text()
+    hb_rows = [
+        {"test": "Hemoglobin", "value": 14.5, "unit": "g/dL",
+         "ref_low": 13.0, "ref_high": 16.5, "flag": None},
+    ]
+
+    def fake_complete(prompt, system, max_tokens=None):
+        if "74 - 106" in prompt:
+            return None, None
+        return _ai_json(hb_rows)
+
+    monkeypatch.setattr(ai_extract_service.llm_client, "complete", fake_complete)
+    monkeypatch.setattr(
+        ai_extract_service.llm_client, "last_error", "groq:http_429"
+    )
+    with patch.object(ai_extract_service.time, "sleep"), patch.object(
+        parse_service, "parse_text", return_value=[]
+    ):
+        out, source = ai_extract_service.extract(text, SPEC)
+    assert source == "ai"
+    assert ai_extract_service.last_run["chunks"] == 3
+    assert ai_extract_service.last_run["ai_chunks"] == 1
+    assert ai_extract_service.last_run["failed_chunks"] == 2
+    assert ai_extract_service.last_run["fail_reasons"] == [
+        "groq:http_429",
+        "groq:http_429",
+    ]
+
+
+def test_last_run_notes_when_ai_disabled(monkeypatch):
+    monkeypatch.setenv("AI_EXTRACTION", "off")
+    out, source = ai_extract_service.extract(CHUNK, SPEC)
+    assert source == "rules"
+    assert ai_extract_service.last_run["note"] == "ai_disabled_or_empty"

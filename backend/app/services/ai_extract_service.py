@@ -22,6 +22,10 @@ Anti-hallucination guards:
   parse_service.parse_text for that chunk only, so a rate-limited chunk never
   silently drops its rows; the whole-text rule fallback applies only when AI
   yields nothing at all.
+- module-level last_run records each run's chunk outcome
+  (chunks/ai_chunks/failed_chunks/fail_reasons) and is surfaced in the
+  analyze API response as extraction_detail, so partial runs on the deployed
+  Space can be diagnosed without server logs.
 """
 import json
 import logging
@@ -48,6 +52,11 @@ EXTRACTION_MAX_TOKENS = 1024
 # daily-quota 429 just burns these retries, then the chunk falls back to the
 # rule parser below.
 _CHUNK_RETRY_DELAYS = (30, 60, 120)
+
+# Diagnostic of the most recent extract() call, surfaced in the analyze API
+# response as extraction_detail so a partial run on the deployed Space can be
+# diagnosed (how many chunks failed and why) without access to server logs.
+last_run: dict = {}
 
 _SYSTEM = (
     "You are a precise medical lab data transcriber. You copy printed facts "
@@ -210,26 +219,28 @@ def _complete_with_retry(prompt: str, retry: bool) -> tuple[str | None, str | No
 
 def _transcribe_chunk(
     chunk: str, spec: list[dict], retry: bool = True
-) -> tuple[list[dict], bool]:
-    """Transcribe one chunk. Returns (rows, failed).
+) -> tuple[list[dict], bool, str | None]:
+    """Transcribe one chunk. Returns (rows, failed, fail_reason).
 
     failed=True means the chunk could not be transcribed even after retries;
     the caller falls back to the rule parser for that chunk so its rows are
-    never silently dropped.
+    never silently dropped. fail_reason is a short tag like "groq:http_429"
+    (or "bad_json" when the model reply could not be parsed).
     """
     names = ", ".join(bm["standard_name"] for bm in spec)
     prompt = _PROMPT_TEMPLATE.format(names=names, text=chunk[: CHUNK_CHARS + 500])
     text, model = _complete_with_retry(prompt, retry)
     if not text:
-        logger.warning("AI extraction: chunk failed after retries")
-        return [], True
+        reason = getattr(llm_client, "last_error", None) or "unknown"
+        logger.warning("AI extraction: chunk failed after retries (%s)", reason)
+        return [], True, reason
     data = _extract_json(text)
     if not data:
         logger.warning("AI extraction: unparseable JSON from %s", model)
-        return [], True
+        return [], True, "bad_json"
     rows = data.get("rows") if isinstance(data, dict) else data
     if not isinstance(rows, list):
-        return [], True
+        return [], True, "bad_json"
     out: list[dict] = []
     for row in rows[:MAX_ROWS_PER_CHUNK]:
         if not isinstance(row, dict):
@@ -237,7 +248,7 @@ def _transcribe_chunk(
         valid = _validate_row(row, chunk, spec)
         if valid is not None:
             out.append(valid)
-    return out, False
+    return out, False, None
 
 
 def ai_enabled() -> bool:
@@ -257,37 +268,53 @@ def extract(text: str, spec: list[dict]) -> tuple[list[dict], str]:
     with the deterministic rule parser instead, so a rate-limited chunk can
     never silently drop its rows. The whole-text rule fallback is used only
     when AI is disabled, unavailable for every chunk, or yields nothing at all.
+
+    Module-level last_run records the outcome of the latest call
+    ({"chunks", "ai_chunks", "failed_chunks", "fail_reasons"}) for the
+    analyze API response.
     """
+    global last_run
     if ai_enabled() and text and text.strip():
         try:
             merged: dict[str, dict] = {}
             ai_rows = 0
+            ai_chunks = 0
             failed_chunks = 0
+            fail_reasons: list[str] = []
             retry = True
             chunks = _chunk_text(text)
             for i, chunk in enumerate(chunks):
                 if i:
                     time.sleep(CHUNK_DELAY_SECONDS)
-                rows, failed = _transcribe_chunk(chunk, spec, retry=retry)
+                rows, failed, reason = _transcribe_chunk(chunk, spec, retry=retry)
                 if failed:
                     failed_chunks += 1
+                    fail_reasons.append(reason or "unknown")
                     # The backend already proved unreachable for one chunk;
                     # don't burn minutes of backoff on every remaining one.
                     retry = False
                     for row in parse_service.parse_text(chunk, spec):
                         merged.setdefault(row["biomarker_id"], row)
                     continue
+                ai_chunks += 1
                 for row in rows:
                     if row["biomarker_id"] not in merged:
                         merged[row["biomarker_id"]] = row
                         ai_rows += 1
+            last_run = {
+                "chunks": len(chunks),
+                "ai_chunks": ai_chunks,
+                "failed_chunks": failed_chunks,
+                "fail_reasons": fail_reasons,
+            }
             if merged:
                 if failed_chunks:
                     logger.warning(
-                        "AI extraction: %d/%d chunk(s) failed after retries; "
-                        "rule parser covered those chunks",
+                        "AI extraction: %d/%d chunk(s) failed after retries "
+                        "(%s); rule parser covered those chunks",
                         failed_chunks,
                         len(chunks),
+                        ", ".join(fail_reasons),
                     )
                 ordered = [
                     merged[bm["biomarker_id"]]
@@ -297,6 +324,22 @@ def extract(text: str, spec: list[dict]) -> tuple[list[dict], str]:
                 logger.info("AI extraction: %d biomarker(s)", len(ordered))
                 return ordered, "ai" if ai_rows else "rules"
             logger.warning("AI extraction returned no rows; using rule parser")
+            last_run["note"] = "ai_returned_no_rows"
         except Exception:
             logger.exception("AI extraction failed; using rule parser")
+            last_run = {
+                "chunks": 0,
+                "ai_chunks": 0,
+                "failed_chunks": 0,
+                "fail_reasons": [],
+                "note": "exception",
+            }
+    else:
+        last_run = {
+            "chunks": 0,
+            "ai_chunks": 0,
+            "failed_chunks": 0,
+            "fail_reasons": [],
+            "note": "ai_disabled_or_empty",
+        }
     return parse_service.parse_text(text, spec), "rules"

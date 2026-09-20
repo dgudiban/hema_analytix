@@ -32,10 +32,15 @@ function fmtRange(r) {
 
 function renderResults(data) {
   $("results-card").classList.remove("hidden");
+  const detail = data.extraction_detail || {};
+  const failed = detail.failed_chunks || 0;
+  const failNote = failed
+    ? ` ${failed}/${detail.chunks || "?"} chunk(s) fell back to rule parsing (${(detail.fail_reasons || []).join(", ")}).`
+    : "";
   const srcBadge =
     data.extraction_source === "ai"
-      ? ` <span class="src-badge" title="Values transcribed by AI from the report's printed text; statuses computed deterministically.">AI-extracted</span>`
-      : ` <span class="src-badge" title="Values matched by the rule-based parser.">rule-parsed</span>`;
+      ? ` <span class="src-badge" title="Values transcribed by AI from the report's printed text; statuses computed deterministically.${failNote}">AI-extracted${failed ? "*" : ""}</span>`
+      : ` <span class="src-badge" title="Values matched by the rule-based parser.${failNote}">rule-parsed</span>`;
   $("report-title").innerHTML = `Report #${data.report_id}${srcBadge}`;
   lastReportId = data.report_id;
   $("summary").textContent = data.summary;

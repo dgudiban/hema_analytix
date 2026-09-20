@@ -49,6 +49,7 @@ class AnalyzeResponse(BaseModel):
     summary: str
     ai_explanation: str | None = None
     extraction_source: str = "rules"  # "ai" when LLM transcription was used
+    extraction_detail: dict = {}  # chunk outcome: chunks/ai_chunks/failed_chunks/fail_reasons
 
 
 class ReportSummary(BaseModel):
