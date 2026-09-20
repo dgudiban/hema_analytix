@@ -149,9 +149,138 @@ const GROUPS = [
   { key: "unknown", icon: "⚪", title: "No reference range on report", match: (s) => s !== "LOW" && s !== "HIGH" && s !== "NORMAL" },
 ];
 
+const BAR_COLORS = { low: "#60a5fa", normal: "#34d399", high: "#fbbf24" };
+
+/* Largest-remainder percentages that always sum to exactly 100. */
+function pct100(counts) {
+  const total = counts.reduce((a, b) => a + b, 0);
+  if (total === 0) return counts.map(() => 0);
+  const raw = counts.map((c) => (c / total) * 100);
+  const out = raw.map(Math.floor);
+  let rem = 100 - out.reduce((a, b) => a + b, 0);
+  const order = raw
+    .map((v, i) => [v - out[i], i])
+    .sort((a, b) => b[0] - a[0]);
+  for (let k = 0; k < rem && k < order.length; k++) out[order[k][1]] += 1;
+  return out;
+}
+
+function donutHTML(results) {
+  const segs = [
+    { key: "below", label: "Below range", color: BAR_COLORS.low, n: 0 },
+    { key: "within", label: "Within range", color: BAR_COLORS.normal, n: 0 },
+    { key: "above", label: "Above range", color: BAR_COLORS.high, n: 0 },
+    { key: "norange", label: "No range printed", color: "#64748b", n: 0 },
+  ];
+  for (const r of results) {
+    if (r.status === "LOW") segs[0].n++;
+    else if (r.status === "NORMAL") segs[1].n++;
+    else if (r.status === "HIGH") segs[2].n++;
+    else segs[3].n++;
+  }
+  const pcts = pct100(segs.map((s) => s.n));
+  const total = results.length;
+  let offset = 25; // start segments at 12 o'clock
+  const circles = segs
+    .map((s, i) => {
+      const dash = `${pcts[i]} ${100 - pcts[i]}`;
+      const el = `<circle r="15.9155" cx="18" cy="18" fill="none" stroke="${s.color}" stroke-width="6" stroke-dasharray="${dash}" stroke-dashoffset="${offset}" />`;
+      offset -= pcts[i];
+      return el;
+    })
+    .join("");
+  const legend = segs
+    .map(
+      (s, i) =>
+        `<li><span class="dot" style="background:${s.color}"></span>${s.label}: <strong>${s.n}</strong> (${pcts[i]}%)</li>`
+    )
+    .join("");
+  const caption = total === 0 ? "No biomarkers" : `${total} biomarker${total === 1 ? "" : "s"}`;
+  return `
+    <div class="donut" role="img" aria-label="Result distribution: ${segs.map((s, i) => `${s.label} ${pcts[i]} percent`).join(", ")}">
+      <svg viewBox="0 0 36 36" class="donut-svg">
+        <circle r="15.9155" cx="18" cy="18" fill="none" stroke="#1e293b" stroke-width="6" />
+        ${circles}
+      </svg>
+      <div class="donut-center"><strong>${total}</strong><span>${total === 1 ? "marker" : "markers"}</span></div>
+    </div>
+    <ul class="donut-legend">${legend}</ul>`;
+}
+
+function renderDonut(results) {
+  $("donut-wrap").innerHTML = donutHTML(results || []);
+}
+
+/* Per-biomarker range indicator, drawn ONLY from this report's own
+   printed reference range (ref_low / ref_high). Handles two-sided,
+   one-sided, and missing ranges. */
+function rangeIndicatorHTML(r) {
+  const lo = r.ref_low;
+  const hi = r.ref_high;
+  const v = r.value;
+  if (lo == null && hi == null) {
+    return `<div class="range-bar none"><span class="muted">No reference range printed — position can't be shown.</span></div>`;
+  }
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  let d0, d1, zones;
+  if (lo != null && hi != null && hi > lo) {
+    const span = hi - lo;
+    const pad = Math.max(span * 0.6, span === 0 ? 1 : 0);
+    d0 = lo - pad;
+    d1 = hi + pad;
+    const x = (val) => clamp01((val - d0) / (d1 - d0)) * 100;
+    zones = [
+      { from: 0, to: x(lo), color: BAR_COLORS.low, label: "low" },
+      { from: x(lo), to: x(hi), color: BAR_COLORS.normal, label: "normal" },
+      { from: x(hi), to: 100, color: BAR_COLORS.high, label: "high" },
+    ];
+  } else if (lo != null) {
+    // One-sided: normal is [lo, ∞).
+    const span = Math.max(Math.abs(v - lo), Math.abs(lo) * 0.2, 1) * 1.4;
+    d0 = lo - span;
+    d1 = lo + span;
+    const x = (val) => clamp01((val - d0) / (d1 - d0)) * 100;
+    zones = [
+      { from: 0, to: x(lo), color: BAR_COLORS.low, label: "low" },
+      { from: x(lo), to: 100, color: BAR_COLORS.normal, label: "≥ normal" },
+    ];
+  } else {
+    // One-sided: normal is (−∞, hi].
+    const span = Math.max(Math.abs(v - hi), Math.abs(hi) * 0.2, 1) * 1.4;
+    d0 = hi - span;
+    d1 = hi + span;
+    const x = (val) => clamp01((val - d0) / (d1 - d0)) * 100;
+    zones = [
+      { from: 0, to: x(hi), color: BAR_COLORS.normal, label: "≤ normal" },
+      { from: x(hi), to: 100, color: BAR_COLORS.high, label: "high" },
+    ];
+  }
+  const pos = clamp01((v - d0) / (d1 - d0)) * 100;
+  const zoneDivs = zones
+    .map(
+      (z) =>
+        `<div class="rzone" title="${z.label}" style="left:${z.from}%;width:${Math.max(0, z.to - z.from)}%;background:${z.color}"></div>`
+    )
+    .join("");
+  const ticks = [];
+  if (lo != null) ticks.push({ at: clamp01((lo - d0) / (d1 - d0)) * 100, label: String(lo) });
+  if (hi != null && hi !== lo) ticks.push({ at: clamp01((hi - d0) / (d1 - d0)) * 100, label: String(hi) });
+  const tickDivs = ticks
+    .map((t) => `<span class="rtick" style="left:${t.at}%"><i></i>${escapeHtml(t.label)}</span>`)
+    .join("");
+  const edge = pos <= 0 || pos >= 100 ? " edge" : "";
+  return `
+    <div class="range-bar" role="img" aria-label="Reference range ${escapeHtml(fmtRange(r))} ${escapeHtml(r.unit)}, your value ${v} ${escapeHtml(r.unit)}">
+      <div class="rtrack">${zoneDivs}
+        <div class="rmarker${edge}" style="left:${pos}%" title="Your value: ${v} ${escapeHtml(r.unit)}"></div>
+      </div>
+      <div class="rticks">${tickDivs}<span class="rvalue" style="left:${pos}%">${v}</span></div>
+      <div class="rcaption">Your value: <strong>${v} ${escapeHtml(r.unit)}</strong> · ref ${escapeHtml(fmtRange(r))}</div>
+    </div>`;
+}
+
 function rangeBarHTML(r) {
-  // Placeholder slot: Phase 4 paints the LOW—NORMAL—HIGH indicator here.
-  return `<div class="range-bar-slot" data-biomarker="${escapeHtml(r.biomarker_id)}"></div>`;
+  return rangeIndicatorHTML(r);
 }
 
 function biomarkerRowHTML(r) {
@@ -192,6 +321,7 @@ function renderQuickSummary(data) {
   const dateStr = data.report_date ? ` · ${data.report_date}` : "";
   $("summary-meta").textContent = `${results.length} biomarker${results.length === 1 ? "" : "s"} detected${dateStr}`;
   $("summary-text").textContent = data.summary || "";
+  renderDonut(results);
 
   const notable = $("notable-list");
   notable.innerHTML = "";

@@ -57,10 +57,13 @@
     <section class="card hidden" id="summary-card">
       <h2>Report analyzed ✓</h2>
       <p class="muted" id="summary-meta"></p>
-      <div class="count-row">
-        <div class="count-box below"><span id="count-below">0</span><label>Below range</label></div>
-        <div class="count-box within"><span id="count-within">0</span><label>Within range</label></div>
-        <div class="count-box above"><span id="count-above">0</span><label>Above range</label></div>
+      <div class="summary-top">
+        <div class="count-row">
+          <div class="count-box below"><span id="count-below">0</span><label>Below range</label></div>
+          <div class="count-box within"><span id="count-within">0</span><label>Within range</label></div>
+          <div class="count-box above"><span id="count-above">0</span><label>Above range</label></div>
+        </div>
+        <div class="donut-wrap" id="donut-wrap"></div>
       </div>
       <p id="summary-text" class="summary"></p>
       <ul id="notable-list" class="notable"></ul>

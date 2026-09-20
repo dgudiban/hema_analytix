@@ -177,6 +177,10 @@ def test_upload_analyze_flow(upload_dir):
     assert detail["report_date"] == "2026-01-15"
     assert len(detail["results"]) >= 3
     assert all("biomarker_id" in r and "source" in r for r in detail["results"])
+    # Phase 3/4: detail carries the computed summary and lab flags for the frontend.
+    assert "Hemoglobin" in detail["summary"]
+    assert detail["summary"].endswith("Educational summary only — not a diagnosis.")
+    assert all("flag" in r for r in detail["results"])
 
 
 def test_upload_analyze_with_calculated(upload_dir):

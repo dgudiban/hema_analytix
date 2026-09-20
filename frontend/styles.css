@@ -303,3 +303,36 @@ select {
 .row-detail-line { margin-top: 0.5rem; font-size: 0.9rem; color: var(--muted); }
 .row-detail-line strong { color: var(--text); }
 .range-bar-slot { margin-top: 0.75rem; }
+
+/* ---- Phase 4: donut + range indicators ---- */
+.summary-top { display: flex; gap: 1.5rem; align-items: center; margin: 1rem 0; flex-wrap: wrap; }
+.summary-top .count-row { margin: 0; flex: 1; min-width: 220px; }
+.donut-wrap { display: flex; gap: 1rem; align-items: center; }
+.donut { position: relative; width: 110px; height: 110px; flex: none; }
+.donut-svg { width: 100%; height: 100%; transform: rotate(0deg); }
+.donut-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; pointer-events: none;
+}
+.donut-center strong { font-size: 1.4rem; line-height: 1; }
+.donut-center span { font-size: 0.7rem; color: var(--muted); }
+.donut-legend { list-style: none; margin: 0; padding: 0; font-size: 0.85rem; }
+.donut-legend li { margin: 0.2rem 0; color: var(--muted); }
+.donut-legend strong { color: var(--text); }
+.donut-legend .dot { display: inline-block; width: 0.65rem; height: 0.65rem; border-radius: 50%; margin-right: 0.45rem; }
+
+.range-bar { margin-top: 0.75rem; }
+.range-bar.none { font-size: 0.85rem; }
+.rtrack { position: relative; height: 12px; border-radius: 6px; overflow: hidden; background: #1e293b; }
+.rzone { position: absolute; top: 0; bottom: 0; opacity: 0.85; }
+.rmarker {
+  position: absolute; top: -3px; width: 4px; height: 18px; border-radius: 2px;
+  background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.5); transform: translateX(-50%);
+}
+.rmarker.edge { background: #f8fafc; }
+.rticks { position: relative; height: 1.6rem; margin-top: 0.15rem; font-size: 0.75rem; color: var(--muted); }
+.rtick { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.rtick i { display: block; width: 1px; height: 4px; background: var(--muted); margin: 0 auto 1px; }
+.rvalue { position: absolute; transform: translateX(-50%); top: 0.9rem; color: var(--text); font-weight: 700; white-space: nowrap; }
+.rcaption { margin-top: 0.35rem; font-size: 0.85rem; color: var(--muted); }
+.rcaption strong { color: var(--text); }
