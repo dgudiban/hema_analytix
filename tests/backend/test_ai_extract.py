@@ -112,7 +112,9 @@ def test_extract_falls_back_when_no_llm_backend():
         ai_extract_service.llm_client, "complete", return_value=(None, None)
     ), patch.object(
         parse_service, "parse_text", return_value=[{"biomarker_id": "BM001"}]
-    ) as fallback:
+    ) as fallback, patch.object(
+        ai_extract_service.time, "sleep"
+    ):
         out, source = ai_extract_service.extract(CHUNK, SPEC)
     assert source == "rules"
     assert out == [{"biomarker_id": "BM001"}]
@@ -214,3 +216,116 @@ def test_extract_json_handles_fences():
     raw = '```json\n{"rows": [{"test": "Hemoglobin", "value": 14.5}]}\n```'
     data = ai_extract_service._extract_json(raw)
     assert data["rows"][0]["value"] == 14.5
+
+
+def test_chunk_retry_recovers_after_transient_failure():
+    # First LLM call fails (e.g. TPM rate limit), second succeeds.
+    rows = [
+        {"test": "Hemoglobin", "value": 14.5, "unit": "g/dL",
+         "ref_low": 13.0, "ref_high": 16.5, "flag": None},
+    ]
+    with patch.object(
+        ai_extract_service.llm_client,
+        "complete",
+        side_effect=[(None, None), _ai_json(rows)],
+    ) as complete, patch.object(
+        ai_extract_service.time, "sleep"
+    ) as sleep:
+        out, source = ai_extract_service.extract(CHUNK, SPEC)
+    assert source == "ai"
+    assert out[0]["biomarker_id"] == "BM001"
+    assert complete.call_count == 2
+    # First retry backs off 30s so the per-minute token window can reset.
+    sleep.assert_any_call(30)
+
+
+def test_chunk_failure_is_exhausted_before_fallback():
+    with patch.object(
+        ai_extract_service.llm_client, "complete", return_value=(None, None)
+    ) as complete, patch.object(
+        ai_extract_service.time, "sleep"
+    ) as sleep, patch.object(
+        parse_service, "parse_text", return_value=[]
+    ):
+        out, source = ai_extract_service.extract(CHUNK, SPEC)
+    # 1 initial attempt + 3 long-backoff retries.
+    assert complete.call_count == 4
+    assert [c.args[0] for c in sleep.call_args_list] == [30, 60, 120]
+    assert source == "rules" and out == []
+
+
+def _two_chunk_text():
+    # Two >6000-char chunks: chunk 0 transcribes fine, chunk 1 is rate-limited.
+    return (
+        "Hemoglobin\ng/dL\n13.0 - 16.5\nColorimetric\n14.5\n" * 220
+        + "Glucose\nmg/dL\n74 - 106\nFasting\n141\n" * 220
+    )
+
+
+def test_failed_chunk_falls_back_to_rule_parser_per_chunk():
+    text = _two_chunk_text()
+    hb_rows = [
+        {"test": "Hemoglobin", "value": 14.5, "unit": "g/dL",
+         "ref_low": 13.0, "ref_high": 16.5, "flag": None},
+    ]
+    glu_rule_row = {
+        "biomarker_id": "BM099",
+        "standard_name": "Glucose",
+        "original_name": "Glucose",
+        "value": 141.0,
+        "unit": "mg/dL",
+        "ref_low": 74.0,
+        "ref_high": 106.0,
+        "flag": None,
+    }
+    spec = SPEC + [
+        {
+            "biomarker_id": "BM099",
+            "standard_name": "Glucose",
+            "common_aliases": [],
+            "typical_units": "mg/dL",
+        }
+    ]
+
+    def fake_complete(prompt, system, max_tokens=None):
+        # The Glucose chunk's report text carries "74 - 106"; fail it always.
+        # (The canonical-names list also mentions Glucose, so match on the
+        # report text, not the bare name.)
+        if "74 - 106" in prompt:
+            return None, None
+        return _ai_json(hb_rows)
+
+    def fake_parse(chunk_text, spec):
+        if "74 - 106" in chunk_text:
+            return [glu_rule_row]
+        return []
+
+    with patch.object(
+        ai_extract_service.llm_client, "complete", side_effect=fake_complete
+    ), patch.object(
+        parse_service, "parse_text", side_effect=fake_parse
+    ), patch.object(
+        ai_extract_service.time, "sleep"
+    ):
+        out, source = ai_extract_service.extract(text, spec)
+    assert source == "ai"  # AI did real work; one chunk covered by rules
+    by_id = {r["biomarker_id"]: r for r in out}
+    assert by_id["BM001"]["value"] == 14.5  # from the AI chunk
+    assert by_id["BM099"]["value"] == 141.0  # from the rule fallback chunk
+
+
+def test_backoff_stops_after_first_failed_chunk():
+    text = "filler line\n" * 1000  # exactly two chunks
+    assert len(ai_extract_service._chunk_text(text)) == 2
+    with patch.object(
+        ai_extract_service.llm_client, "complete", return_value=(None, None)
+    ) as complete, patch.object(
+        ai_extract_service.time, "sleep"
+    ), patch.object(
+        parse_service, "parse_text", return_value=[]
+    ):
+        out, source = ai_extract_service.extract(text, SPEC)
+    # First chunk: 1 attempt + 3 long-backoff retries.
+    # Second chunk: single attempt, no backoff (backend already unreachable).
+    assert complete.call_count == 5
+    assert source == "rules" and out == []

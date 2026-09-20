@@ -18,8 +18,10 @@ Anti-hallucination guards:
 - every transcribed value must appear verbatim in the source chunk text,
 - transcribed names are mapped to the spec by deterministic exact matching,
   never by the LLM — unmapped names are dropped,
-- on any failure (no LLM backend, bad JSON, empty result) the caller falls
-  back to parse_service.parse_text.
+- a chunk that fails even after long-backoff retries is parsed with
+  parse_service.parse_text for that chunk only, so a rate-limited chunk never
+  silently drops its rows; the whole-text rule fallback applies only when AI
+  yields nothing at all.
 """
 import json
 import logging
@@ -31,14 +33,21 @@ from app.services import llm_client, parse_service
 
 logger = logging.getLogger(__name__)
 
-# ~2k tokens per chunk: safely under the 8k TPM free-tier window even with a
-# couple of sequential calls, and small enough that the model stays precise.
+# ~2k tokens per chunk: small enough that the model stays precise.
 CHUNK_CHARS = 6000
 MAX_ROWS_PER_CHUNK = 120
 # Pacing between chunk calls keeps a long report under the free-tier
 # tokens-per-minute budget instead of bursting all chunks at once.
-# ~2.4k input tokens per chunk / 20s ~= 7k TPM, inside the 8k window.
-CHUNK_DELAY_SECONDS = 20
+# ~3k input+output tokens per chunk / 30s ~= 6k TPM, inside the 8k window.
+CHUNK_DELAY_SECONDS = 30
+# Output rarely exceeds a few hundred tokens (~15 rows per chunk); 1024 leaves
+# headroom while keeping the TPM burn of each call low.
+EXTRACTION_MAX_TOKENS = 1024
+# Rate-limited chunks are retried with long backoff: Groq's TPM window resets
+# within a minute, so waiting it out almost always recovers the chunk. A hard
+# daily-quota 429 just burns these retries, then the chunk falls back to the
+# rule parser below.
+_CHUNK_RETRY_DELAYS = (30, 60, 120)
 
 _SYSTEM = (
     "You are a precise medical lab data transcriber. You copy printed facts "
@@ -173,24 +182,54 @@ def _validate_row(row: dict, chunk: str, spec: list[dict]) -> dict | None:
     }
 
 
-def _transcribe_chunk(chunk: str, spec: list[dict]) -> list[dict]:
+def _complete_with_retry(prompt: str, retry: bool) -> tuple[str | None, str | None]:
+    """Call the LLM, retrying silent failures (incl. TPM rate limits).
+
+    The client surfaces every backend failure as (None, None), so retries are
+    bounded and back off long enough for the per-minute token window to reset.
+    With retry=False a single attempt is made (used once an earlier chunk has
+    already proven the backend unreachable — the remaining chunks then fail
+    fast instead of each burning minutes of backoff).
+    """
+    delays = (0,) + _CHUNK_RETRY_DELAYS if retry else (0,)
+    for attempt, wait in enumerate(delays):
+        if wait:
+            logger.warning(
+                "AI extraction: chunk attempt %d failed; retrying in %ds",
+                attempt,
+                wait,
+            )
+            time.sleep(wait)
+        text, model = llm_client.complete(
+            prompt, _SYSTEM, max_tokens=EXTRACTION_MAX_TOKENS
+        )
+        if text:
+            return text, model
+    return None, None
+
+
+def _transcribe_chunk(
+    chunk: str, spec: list[dict], retry: bool = True
+) -> tuple[list[dict], bool]:
+    """Transcribe one chunk. Returns (rows, failed).
+
+    failed=True means the chunk could not be transcribed even after retries;
+    the caller falls back to the rule parser for that chunk so its rows are
+    never silently dropped.
+    """
     names = ", ".join(bm["standard_name"] for bm in spec)
     prompt = _PROMPT_TEMPLATE.format(names=names, text=chunk[: CHUNK_CHARS + 500])
-    # One retry for transient network/5xx failures; a rate limit (429) is not
-    # retried — the caller falls back to the rule-based parser instead.
-    text, model = llm_client.complete(prompt, _SYSTEM, max_tokens=2048)
-    if text is None:
-        time.sleep(2)
-        text, model = llm_client.complete(prompt, _SYSTEM, max_tokens=2048)
+    text, model = _complete_with_retry(prompt, retry)
     if not text:
-        return []
+        logger.warning("AI extraction: chunk failed after retries")
+        return [], True
     data = _extract_json(text)
     if not data:
         logger.warning("AI extraction: unparseable JSON from %s", model)
-        return []
+        return [], True
     rows = data.get("rows") if isinstance(data, dict) else data
     if not isinstance(rows, list):
-        return []
+        return [], True
     out: list[dict] = []
     for row in rows[:MAX_ROWS_PER_CHUNK]:
         if not isinstance(row, dict):
@@ -198,7 +237,7 @@ def _transcribe_chunk(chunk: str, spec: list[dict]) -> list[dict]:
         valid = _validate_row(row, chunk, spec)
         if valid is not None:
             out.append(valid)
-    return out
+    return out, False
 
 
 def ai_enabled() -> bool:
@@ -213,26 +252,50 @@ def ai_enabled() -> bool:
 def extract(text: str, spec: list[dict]) -> tuple[list[dict], str]:
     """Extract biomarker rows, preferring AI transcription.
 
-    Returns (rows, source) where source is "ai" or "rules". Falls back to the
-    rule-based parser whenever AI is disabled, unavailable, or yields nothing.
+    Returns (rows, source) where source is "ai" or "rules". Every chunk is
+    transcribed by the LLM; a chunk that still fails after retries is parsed
+    with the deterministic rule parser instead, so a rate-limited chunk can
+    never silently drop its rows. The whole-text rule fallback is used only
+    when AI is disabled, unavailable for every chunk, or yields nothing at all.
     """
     if ai_enabled() and text and text.strip():
         try:
             merged: dict[str, dict] = {}
+            ai_rows = 0
+            failed_chunks = 0
+            retry = True
             chunks = _chunk_text(text)
             for i, chunk in enumerate(chunks):
                 if i:
                     time.sleep(CHUNK_DELAY_SECONDS)
-                for row in _transcribe_chunk(chunk, spec):
-                    merged.setdefault(row["biomarker_id"], row)
+                rows, failed = _transcribe_chunk(chunk, spec, retry=retry)
+                if failed:
+                    failed_chunks += 1
+                    # The backend already proved unreachable for one chunk;
+                    # don't burn minutes of backoff on every remaining one.
+                    retry = False
+                    for row in parse_service.parse_text(chunk, spec):
+                        merged.setdefault(row["biomarker_id"], row)
+                    continue
+                for row in rows:
+                    if row["biomarker_id"] not in merged:
+                        merged[row["biomarker_id"]] = row
+                        ai_rows += 1
             if merged:
+                if failed_chunks:
+                    logger.warning(
+                        "AI extraction: %d/%d chunk(s) failed after retries; "
+                        "rule parser covered those chunks",
+                        failed_chunks,
+                        len(chunks),
+                    )
                 ordered = [
                     merged[bm["biomarker_id"]]
                     for bm in spec
                     if bm["biomarker_id"] in merged
                 ]
                 logger.info("AI extraction: %d biomarker(s)", len(ordered))
-                return ordered, "ai"
+                return ordered, "ai" if ai_rows else "rules"
             logger.warning("AI extraction returned no rows; using rule parser")
         except Exception:
             logger.exception("AI extraction failed; using rule parser")

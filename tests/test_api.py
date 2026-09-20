@@ -12,6 +12,16 @@ from app.services import pdf_service
 client = TestClient(app)
 
 
+@pytest.fixture(autouse=True)
+def _no_ai_extraction(monkeypatch):
+    """API tests exercise the deterministic rule-parser path end to end.
+
+    AI transcription has its own test module; without this, analyze would
+    burn the LLM retry backoff against the (absent) test backends.
+    """
+    monkeypatch.setenv("AI_EXTRACTION", "off")
+
+
 def make_pdf(lines: list[str]) -> bytes:
     """Build a minimal valid one-page PDF with the given text lines."""
     safe = [l.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)") for l in lines]
