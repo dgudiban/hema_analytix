@@ -341,3 +341,18 @@ def test_cumm_units_captured_and_equivalent(spec):
     # 1 cumm == 1 uL: trend compatibility across unit spellings.
     assert normalize_unit("cumm") == normalize_unit("/uL")
     assert normalize_unit("mill/cumm") == normalize_unit("million/µL")
+
+
+def test_abnormal_flag_wins_over_transcribed_range():
+    # The lab's printed flag is its verdict from the correct reference band.
+    # If the AI transcribes the wrong band of a multi-band reference, the
+    # flag still decides the status (test2: triglycerides 168, flag High,
+    # AI transcribed the "High: 200-499" band as ref_high 200).
+    from app.services.analysis_service import flag_status
+
+    assert flag_status(168.0, None, 200.0, "High") == "HIGH"
+    assert flag_status(8.0, 30.0, 100.0, "Low") == "LOW"
+    # A Normal flag (or none) still defers to the range.
+    assert flag_status(90.0, 0.0, 100.0, "Normal") == "NORMAL"
+    assert flag_status(90.0, 0.0, 100.0, None) == "NORMAL"
+    assert flag_status(150.0, 0.0, 100.0, None) == "HIGH"

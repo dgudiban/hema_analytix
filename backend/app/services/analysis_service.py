@@ -7,7 +7,10 @@ lab report. When the report gives no range, the lab's own printed flag
 deterministic code, never an LLM decision.
 """
 
-# Lab-printed flag -> status, used only when the report prints no range.
+# Lab-printed flag -> status. An abnormal flag is the lab's own verdict from the
+# correct reference band, so it wins over the transcribed range: the AI can
+# pick the wrong band from multi-band references (e.g. "Near optimal: 100-129"
+# instead of "Optimal: <100"), but the flag is the lab's authoritative call.
 _FLAG_STATUS = {"Low": "LOW", "High": "HIGH", "Normal": "NORMAL"}
 
 
@@ -17,13 +20,19 @@ def flag_status(
     ref_high: float | None,
     flag: str | None = None,
 ) -> str:
-    """LOW / HIGH / NORMAL / unknown from the report's own reference range.
+    """LOW / HIGH / NORMAL / unknown from the report's own data.
 
-    One-sided ranges: with only ref_high, value > ref_high -> HIGH else
-    NORMAL; with only ref_low, value < ref_low -> LOW else NORMAL.
-    With no range at all, the lab's printed flag is transcribed
-    (Low -> LOW, High -> HIGH, Normal -> NORMAL); anything else is unknown.
+    An abnormal printed flag (High/Low) always decides the status — it is the
+    lab's verdict. Otherwise the value is compared against the printed range:
+    one-sided ranges use the single bound (value > ref_high -> HIGH with only
+    ref_high; value < ref_low -> LOW with only ref_low). With no range and no
+    abnormal flag, a printed Normal flag transcribes to NORMAL; anything else
+    is unknown.
     """
+    if flag == "High":
+        return "HIGH"
+    if flag == "Low":
+        return "LOW"
     if ref_low is None and ref_high is None:
         return _FLAG_STATUS.get(flag or "", "unknown")
     if ref_low is not None and value < ref_low:
