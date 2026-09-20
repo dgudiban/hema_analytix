@@ -235,8 +235,8 @@ def test_chunk_retry_recovers_after_transient_failure():
     assert source == "ai"
     assert out[0]["biomarker_id"] == "BM001"
     assert complete.call_count == 2
-    # First retry backs off 30s so the per-minute token window can reset.
-    sleep.assert_any_call(30)
+    # First retry backs off 20s; 20s + 40s fully clears the TPM window.
+    sleep.assert_any_call(20)
 
 
 def test_chunk_failure_is_exhausted_before_fallback():
@@ -248,9 +248,9 @@ def test_chunk_failure_is_exhausted_before_fallback():
         parse_service, "parse_text", return_value=[]
     ):
         out, source = ai_extract_service.extract(CHUNK, SPEC)
-    # 1 initial attempt + 3 long-backoff retries.
-    assert complete.call_count == 4
-    assert [c.args[0] for c in sleep.call_args_list] == [30, 60, 120]
+    # 1 initial attempt + 2 short-backoff retries (20s + 40s clears the TPM window).
+    assert complete.call_count == 3
+    assert [c.args[0] for c in sleep.call_args_list] == [20, 40]
     assert source == "rules" and out == []
 
 
@@ -325,9 +325,9 @@ def test_backoff_stops_after_first_failed_chunk():
         parse_service, "parse_text", return_value=[]
     ):
         out, source = ai_extract_service.extract(text, SPEC)
-    # First chunk: 1 attempt + 3 long-backoff retries.
+    # First chunk: 1 attempt + 2 short-backoff retries.
     # Second chunk: single attempt, no backoff (backend already unreachable).
-    assert complete.call_count == 5
+    assert complete.call_count == 4
     assert source == "rules" and out == []
 
 

@@ -47,11 +47,13 @@ CHUNK_DELAY_SECONDS = 30
 # Output rarely exceeds a few hundred tokens (~15 rows per chunk); 1024 leaves
 # headroom while keeping the TPM burn of each call low.
 EXTRACTION_MAX_TOKENS = 1024
-# Rate-limited chunks are retried with long backoff: Groq's TPM window resets
-# within a minute, so waiting it out almost always recovers the chunk. A hard
-# daily-quota 429 just burns these retries, then the chunk falls back to the
-# rule parser below.
-_CHUNK_RETRY_DELAYS = (30, 60, 120)
+# Rate-limited chunks are retried with backoff: Groq's TPM window slides over
+# 60s, so 20s + 40s of backoff fully clears a hot window. Kept short on
+# purpose: a disconnected client does not stop the server, so long backoffs
+# across repeated analyze attempts pile up into a self-inflicted retry storm
+# and push the request past the ~4-5 min ingress timeout — a fast, honest
+# partial (with fail_reasons in extraction_detail) beats a dead connection.
+_CHUNK_RETRY_DELAYS = (20, 40)
 
 # Diagnostic of the most recent extract() call, surfaced in the analyze API
 # response as extraction_detail so a partial run on the deployed Space can be
