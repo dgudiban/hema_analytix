@@ -20,6 +20,8 @@ class Report(Base):
     # Date printed on the report (falls back to the upload date at capture).
     report_date = Column(Date, nullable=True)
     raw_text = Column(Text, nullable=True)
+    # "ai" when the report's values were transcribed by the LLM, else "rules".
+    extraction_source = Column(String(8), nullable=True, default="rules")
 
     results = relationship(
         "Result", back_populates="report", cascade="all, delete-orphan"

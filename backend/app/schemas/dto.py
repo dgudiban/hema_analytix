@@ -48,6 +48,7 @@ class AnalyzeResponse(BaseModel):
     results: list[ResultOut]
     summary: str
     ai_explanation: str | None = None
+    extraction_source: str = "rules"  # "ai" when LLM transcription was used
 
 
 class ReportSummary(BaseModel):
@@ -64,6 +65,7 @@ class ReportDetail(BaseModel):
     report_date: date | None = None
     uploaded_at: datetime
     results: list[ResultOut]
+    extraction_source: str = "rules"
 
 
 class TrendPoint(BaseModel):

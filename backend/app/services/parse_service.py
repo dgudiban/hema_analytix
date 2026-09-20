@@ -283,3 +283,31 @@ def parse_text(text: str, spec: list[dict]) -> list[dict]:
 
     # Preserve spec order in the output.
     return [found[bm["biomarker_id"]] for bm in spec if bm["biomarker_id"] in found]
+
+
+def match_biomarker(name: str, spec: list[dict]) -> dict | None:
+    """Deterministically map a free-text test name to a biomarker spec entry.
+
+    Used by the AI extraction path: the LLM transcribes the printed test name,
+    this code (not the LLM) decides which spec biomarker it is — longest alias
+    first, exact normalized match only. No match means the row is dropped,
+    exactly like the rule-based parser drops names it cannot resolve, so a
+    subtype (e.g. "Ionized Calcium") can never merge into the wrong entry.
+    """
+    def _norm(s: str) -> str:
+        s = re.sub(r"\s+", " ", (s or "")).strip().lower()
+        s = re.sub(r"\s*\([^)]*\)\s*", " ", s)  # drop "(Hb)"-style abbreviations
+        return re.sub(r"\s+", " ", s).strip()
+
+    target = _norm(name)
+    if not target:
+        return None
+    jobs = []
+    for bm in spec:
+        for alias in [n for n in [bm["standard_name"], *bm["common_aliases"]] if n]:
+            jobs.append((len(alias), bm, _norm(alias)))
+    jobs.sort(key=lambda job: -job[0])  # longest alias first
+    for _, bm, alias in jobs:
+        if alias and alias == target:
+            return bm
+    return None

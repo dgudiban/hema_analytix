@@ -74,12 +74,14 @@ http://127.0.0.1:8000/docs.
    falls back to the upload date). Pages with no extractable text are flagged
    as scanned (OCR is an optional, clearly-marked hook in
    `backend/app/services/pdf_service.py`).
-2. **Parse** — `backend/app/services/parse_service.py` matches the spec's
-   standard names + aliases (longest first, so "Total Cholesterol" beats
-   "Cholesterol"; hyphen-aware boundaries so "hs-CRP" never merges into "CRP")
-   against the text, captures values (thousands commas handled), the unit, and
-   the reference range printed on the report (`(12.0-15.5)`, `Ref 4,000-11,000`,
-   `> 60`, `< 200`).
+2. **Extract** — `backend/app/services/ai_extract_service.py` transcribes
+   biomarker rows with AI (Groq free tier, needs `GROQ_API_KEY`; disable with
+   `AI_EXTRACTION=off`), falling back to the rule-based
+   `backend/app/services/parse_service.py` automatically. The AI only copies
+   printed facts (name, value, unit, reference range, lab flag) — it never
+   decides status. Transcribed names are mapped to the spec by deterministic
+   exact matching and every value must appear verbatim in the source text,
+   so nothing can be hallucinated into the results.
 3. **Normalize** — `backend/app/services/normalize_service.py` maps each result
    to its `biomarker_id` (e.g. `BM001`) while keeping the original test name as
    written in the report. Subtype no-merge rules are enforced (RDW-CV vs RDW-SD,

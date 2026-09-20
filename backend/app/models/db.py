@@ -43,6 +43,15 @@ def ensure_columns() -> None:
     if "flag" not in existing:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE results ADD COLUMN flag VARCHAR(12)"))
+    if "reports" in inspector.get_table_names():
+        existing_reports = {
+            col["name"] for col in inspector.get_columns("reports")
+        }
+        if "extraction_source" not in existing_reports:
+            with engine.begin() as conn:
+                conn.execute(
+                    text("ALTER TABLE reports ADD COLUMN extraction_source VARCHAR(8)")
+                )
 
 
 def get_db():

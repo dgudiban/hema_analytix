@@ -14,6 +14,7 @@ from app.schemas.dto import (
     UploadResponse,
 )
 from app.services import (
+    ai_extract_service,
     ai_service,
     analysis_service,
     normalize_service,
@@ -58,7 +59,12 @@ def analyze_report(report_id: int, db: Session = Depends(get_db)):
     if report is None:
         raise HTTPException(status_code=404, detail="Report not found.")
 
-    parsed = parse_service.parse_text(report.raw_text or "", get_biomarkers())
+    # AI transcription first (transcribes printed facts only — status stays
+    # deterministic); rule-based parser is the automatic fallback.
+    parsed, extraction_source = ai_extract_service.extract(
+        report.raw_text or "", get_biomarkers()
+    )
+    report.extraction_source = extraction_source
     normalized = normalize_service.normalize(parsed)
     with_calculated = normalize_service.add_calculated(normalized)
     analyzed = analysis_service.analyze(with_calculated)
@@ -94,6 +100,7 @@ def analyze_report(report_id: int, db: Session = Depends(get_db)):
         "results": analyzed,
         "summary": summary,
         "ai_explanation": ai_explanation,
+        "extraction_source": extraction_source,
     }
 
 
@@ -150,4 +157,5 @@ def get_report(report_id: int, db: Session = Depends(get_db)):
         "report_date": report.report_date,
         "uploaded_at": report.uploaded_at,
         "results": [_result_out(r) for r in report.results],
+        "extraction_source": report.extraction_source or "rules",
     }

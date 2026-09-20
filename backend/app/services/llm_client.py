@@ -20,7 +20,7 @@ def _groq_model() -> str:
     return os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 
 
-def _groq_complete(prompt: str, system: str) -> str | None:
+def _groq_complete(prompt: str, system: str, max_tokens: int = 1024) -> str | None:
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         return None
@@ -35,9 +35,9 @@ def _groq_complete(prompt: str, system: str) -> str | None:
                     {"role": "user", "content": prompt},
                 ],
                 "temperature": 0.3,
-                "max_tokens": 1024,
+                "max_tokens": max_tokens,
             },
-            timeout=60,
+            timeout=90,
         )
         resp.raise_for_status()
         content = resp.json()["choices"][0]["message"]["content"]
@@ -88,9 +88,11 @@ def _ollama_complete(prompt: str, system: str) -> str | None:
         return None
 
 
-def complete(prompt: str, system: str = "") -> tuple[str | None, str | None]:
+def complete(
+    prompt: str, system: str = "", max_tokens: int = 1024
+) -> tuple[str | None, str | None]:
     """Return (text, model_name), or (None, None) when no backend is up."""
-    text = _groq_complete(prompt, system)
+    text = _groq_complete(prompt, system, max_tokens=max_tokens)
     if text:
         return text, _groq_model()
     text = _gemini_complete(prompt, system)

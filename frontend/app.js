@@ -32,7 +32,11 @@ function fmtRange(r) {
 
 function renderResults(data) {
   $("results-card").classList.remove("hidden");
-  $("report-title").textContent = `Report #${data.report_id}`;
+  const srcBadge =
+    data.extraction_source === "ai"
+      ? ` <span class="src-badge" title="Values transcribed by AI from the report's printed text; statuses computed deterministically.">AI-extracted</span>`
+      : ` <span class="src-badge" title="Values matched by the rule-based parser.">rule-parsed</span>`;
+  $("report-title").innerHTML = `Report #${data.report_id}${srcBadge}`;
   lastReportId = data.report_id;
   $("summary").textContent = data.summary;
   lastAiExplanation = data.ai_explanation;
@@ -153,6 +157,7 @@ async function loadHistory() {
           results: detail.results,
           summary: `Saved analysis of ${detail.filename}: ${detail.results.length} biomarker(s).`,
           ai_explanation: null,
+          extraction_source: detail.extraction_source || "rules",
         });
       });
       li.appendChild(link);
