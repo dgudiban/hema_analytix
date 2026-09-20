@@ -287,7 +287,7 @@ def test_failed_chunk_falls_back_to_rule_parser_per_chunk():
         }
     ]
 
-    def fake_complete(prompt, system, max_tokens=None):
+    def fake_complete(prompt, system, max_tokens=None, model_order=None):
         # The Glucose chunk's report text carries "74 - 106"; fail it always.
         # (The canonical-names list also mentions Glucose, so match on the
         # report text, not the bare name.)
@@ -377,7 +377,7 @@ def test_last_run_mixed_chunks(monkeypatch):
          "ref_low": 13.0, "ref_high": 16.5, "flag": None},
     ]
 
-    def fake_complete(prompt, system, max_tokens=None):
+    def fake_complete(prompt, system, max_tokens=None, model_order=None):
         if "74 - 106" in prompt:
             return None, None
         return _ai_json(hb_rows)

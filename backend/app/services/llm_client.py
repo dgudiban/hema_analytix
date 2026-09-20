@@ -23,11 +23,6 @@ OLLAMA_MODEL = "llama3.1"
 last_error: str | None = None
 
 
-def _groq_model() -> str:
-    # Overridable via env; default verified against Groq's free tier.
-    return os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
-
-
 def _http_error_tag(exc: requests.HTTPError) -> str:
     """Build an error tag like http_429:<rate-limit detail from the body>.
 
@@ -42,7 +37,7 @@ def _http_error_tag(exc: requests.HTTPError) -> str:
         err = body.get("error") if isinstance(body, dict) else None
         msg = err.get("message", "") if isinstance(err, dict) else ""
         msg = re.sub(r"\s+", " ", str(msg)).strip()
-        msg = re.sub(r"org-[A-Za-z0-9]+", "org-…", msg)  # keep org ids out
+        msg = re.sub(r"org[-_][A-Za-z0-9]+", "org-…", msg)  # keep org ids out
         if msg:
             tag += ":" + msg[:180]
     except Exception:
@@ -50,30 +45,39 @@ def _http_error_tag(exc: requests.HTTPError) -> str:
     return tag
 
 
-def _groq_complete(
-    prompt: str, system: str, max_tokens: int = 1024
+def _groq_models() -> list[str]:
+    """Groq models to try in order. Quotas are per model, so a second model
+    is a fresh quota pool when the first is exhausted."""
+    raw = os.environ.get("GROQ_MODELS", "")
+    models = [m.strip() for m in raw.split(",") if m.strip()]
+    return models or ["openai/gpt-oss-120b", "llama-3.3-70b-versatile"]
+
+
+def _groq_one(
+    prompt: str, system: str, model: str, max_tokens: int = 1024
 ) -> tuple[str | None, str | None]:
-    """Return (text, error_tag); error_tag is None on success."""
+    """Single-model Groq call. Return (text, error_tag); error_tag None on success."""
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         return None, "no_key"
+    body: dict = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.3,
+        "max_tokens": max_tokens,
+    }
+    if "gpt-oss" in model:
+        # gpt-oss is a reasoning model; hidden reasoning tokens count against
+        # the free TPM quota, so keep reasoning minimal for transcription.
+        body["reasoning_effort"] = "low"
     try:
         resp = requests.post(
             GROQ_URL,
             headers={"Authorization": f"Bearer {api_key}"},
-            json={
-                "model": _groq_model(),
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": prompt},
-                ],
-                "temperature": 0.3,
-                "max_tokens": max_tokens,
-                # gpt-oss is a reasoning model; hidden reasoning tokens count
-                # against the free TPM quota, so keep reasoning minimal for
-                # transcription-style tasks.
-                "reasoning_effort": "low",
-            },
+            json=body,
             timeout=90,
         )
         resp.raise_for_status()
@@ -151,9 +155,17 @@ def _ollama_complete(prompt: str, system: str) -> tuple[str | None, str | None]:
 
 
 def complete(
-    prompt: str, system: str = "", max_tokens: int = 1024
+    prompt: str,
+    system: str = "",
+    max_tokens: int = 1024,
+    model_order: list[str] | None = None,
 ) -> tuple[str | None, str | None]:
     """Return (text, model_name), or (None, None) when no backend is up.
+
+    Groq models are tried in order (quotas are per model, so a second model
+    is a fresh quota pool when the first is exhausted). Pass model_order to
+    prefer a specific model for a workload, e.g. a high-TPM model for
+    token-heavy extraction.
 
     After the call, module-level last_error is None on success, or a short
     tag naming every backend failure, e.g. "groq:http_429",
@@ -164,11 +176,14 @@ def complete(
     last_error = None
     failures: list[str] = []
 
-    text, err = _groq_complete(prompt, system, max_tokens=max_tokens)
-    if text:
-        return text, _groq_model()
-    if err != "no_key":
-        failures.append(f"groq:{err}")
+    for model in model_order or _groq_models():
+        text, err = _groq_one(prompt, system, model, max_tokens=max_tokens)
+        if text:
+            return text, model
+        if err != "no_key":
+            failures.append(f"groq:{err}")
+        else:
+            break  # no key configured; don't try more Groq models
 
     text, err = _gemini_complete(prompt, system)
     if text:

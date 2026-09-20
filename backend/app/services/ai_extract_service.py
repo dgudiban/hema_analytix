@@ -201,6 +201,10 @@ def _complete_with_retry(prompt: str, retry: bool) -> tuple[str | None, str | No
     With retry=False a single attempt is made (used once an earlier chunk has
     already proven the backend unreachable — the remaining chunks then fail
     fast instead of each burning minutes of backoff).
+
+    Extraction prefers llama-3.3-70b-versatile: transcription needs no
+    120B-scale reasoning, and its 12k TPM / separate daily quota gives the
+    token-heavy chunk workload far more headroom than gpt-oss-120b.
     """
     delays = (0,) + _CHUNK_RETRY_DELAYS if retry else (0,)
     for attempt, wait in enumerate(delays):
@@ -212,7 +216,10 @@ def _complete_with_retry(prompt: str, retry: bool) -> tuple[str | None, str | No
             )
             time.sleep(wait)
         text, model = llm_client.complete(
-            prompt, _SYSTEM, max_tokens=EXTRACTION_MAX_TOKENS
+            prompt,
+            _SYSTEM,
+            max_tokens=EXTRACTION_MAX_TOKENS,
+            model_order=["llama-3.3-70b-versatile", "openai/gpt-oss-120b"],
         )
         if text:
             return text, model
