@@ -37,16 +37,18 @@ from app.services import llm_client, parse_service
 
 logger = logging.getLogger(__name__)
 
-# ~2k tokens per chunk: small enough that the model stays precise.
-CHUNK_CHARS = 6000
+# ~1.5k tokens per chunk: small enough that the model stays precise and a
+# row-dense chunk's JSON fits comfortably in the output cap.
+CHUNK_CHARS = 4500
 MAX_ROWS_PER_CHUNK = 120
 # Pacing between chunk calls keeps a long report under the free-tier
 # tokens-per-minute budget instead of bursting all chunks at once.
-# ~3k input+output tokens per chunk / 30s ~= 6k TPM, inside the 8k window.
+# ~3.7k input+output tokens per chunk / 30s ~= 7.4k TPM, inside the 8k window.
 CHUNK_DELAY_SECONDS = 30
-# Output rarely exceeds a few hundred tokens (~15 rows per chunk); 1024 leaves
-# headroom while keeping the TPM burn of each call low.
-EXTRACTION_MAX_TOKENS = 1024
+# Dense chunks (CBC + metabolic panels) can exceed 1k tokens of JSON; a
+# truncated reply parses as bad_json and loses the whole chunk, so the cap
+# leaves real headroom while the smaller chunks keep TPM burn flat.
+EXTRACTION_MAX_TOKENS = 1600
 # Rate-limited chunks are retried with backoff: Groq's TPM window slides over
 # 60s, so 20s + 40s of backoff fully clears a hot window. Kept short on
 # purpose: a disconnected client does not stop the server, so long backoffs

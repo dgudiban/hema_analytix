@@ -288,10 +288,10 @@ def test_chunk_failure_is_exhausted_before_fallback():
 
 
 def _two_chunk_text():
-    # Two >6000-char chunks: chunk 0 transcribes fine, chunk 1 is rate-limited.
+    # >4500-char sections: chunk 0 is Hb-only, later chunks carry glucose.
     return (
-        "Hemoglobin\ng/dL\n13.0 - 16.5\nColorimetric\n14.5\n" * 220
-        + "Glucose\nmg/dL\n74 - 106\nFasting\n141\n" * 220
+        "Hemoglobin\ng/dL\n13.0 - 16.5\nColorimetric\n14.5\n" * 150
+        + "Glucose\nmg/dL\n74 - 106\nFasting\n141\n" * 150
     )
 
 
@@ -348,7 +348,7 @@ def test_failed_chunk_falls_back_to_rule_parser_per_chunk():
 
 
 def test_backoff_stops_after_first_failed_chunk():
-    text = "filler line\n" * 1000  # exactly two chunks
+    text = "filler line\n" * 500  # exactly two chunks
     assert len(ai_extract_service._chunk_text(text)) == 2
     with patch.object(
         ai_extract_service.llm_client, "complete", return_value=(None, None)
