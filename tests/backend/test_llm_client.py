@@ -114,7 +114,7 @@ def test_complete_falls_back_to_second_groq_model(monkeypatch):
     ):
         text, model = llm_client.complete("hi", "sys")
     assert text == "fine"
-    assert model == "llama-3.3-70b-versatile"
+    assert model == "openai/gpt-oss-20b"
     assert llm_client.last_error is None
 
 
@@ -124,10 +124,10 @@ def test_complete_honors_model_order(monkeypatch):
     ok.json.return_value = {"choices": [{"message": {"content": "fine"}}]}
     with patch.object(llm_client.requests, "post", return_value=ok) as post:
         text, model = llm_client.complete(
-            "hi", "sys", model_order=["llama-3.3-70b-versatile"]
+            "hi", "sys", model_order=["openai/gpt-oss-20b"]
         )
-    assert (text, model) == ("fine", "llama-3.3-70b-versatile")
-    assert post.call_args.kwargs["json"]["model"] == "llama-3.3-70b-versatile"
+    assert (text, model) == ("fine", "openai/gpt-oss-20b")
+    assert post.call_args.kwargs["json"]["model"] == "openai/gpt-oss-20b"
 
 
 def test_reasoning_effort_only_for_gpt_oss(monkeypatch):
@@ -138,15 +138,15 @@ def test_reasoning_effort_only_for_gpt_oss(monkeypatch):
         llm_client._groq_one("hi", "sys", "openai/gpt-oss-120b")
         assert post.call_args.kwargs["json"]["reasoning_effort"] == "low"
     with patch.object(llm_client.requests, "post", return_value=ok) as post:
-        llm_client._groq_one("hi", "sys", "llama-3.3-70b-versatile")
+        llm_client._groq_one("hi", "sys", "qwen/qwen3-32b")
         assert "reasoning_effort" not in post.call_args.kwargs["json"]
 
 
 def test_groq_models_env_override(monkeypatch):
-    monkeypatch.setenv("GROQ_MODELS", "llama-3.3-70b-versatile")
-    assert llm_client._groq_models() == ["llama-3.3-70b-versatile"]
+    monkeypatch.setenv("GROQ_MODELS", "openai/gpt-oss-20b")
+    assert llm_client._groq_models() == ["openai/gpt-oss-20b"]
     monkeypatch.delenv("GROQ_MODELS")
     assert llm_client._groq_models() == [
         "openai/gpt-oss-120b",
-        "llama-3.3-70b-versatile",
+        "openai/gpt-oss-20b",
     ]

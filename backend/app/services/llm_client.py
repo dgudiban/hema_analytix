@@ -50,7 +50,9 @@ def _groq_models() -> list[str]:
     is a fresh quota pool when the first is exhausted."""
     raw = os.environ.get("GROQ_MODELS", "")
     models = [m.strip() for m in raw.split(",") if m.strip()]
-    return models or ["openai/gpt-oss-120b", "llama-3.3-70b-versatile"]
+    # gpt-oss-20b: same family, production tier, own 200k/day quota pool.
+    # (llama-3.3-70b-versatile moved to Enterprise-only; 404s on free tier.)
+    return models or ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
 
 
 def _groq_one(
