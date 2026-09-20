@@ -67,6 +67,7 @@ class ReportDetail(BaseModel):
     report_date: date | None = None
     uploaded_at: datetime
     results: list[ResultOut]
+    summary: str = ""
     extraction_source: str = "rules"
 
 

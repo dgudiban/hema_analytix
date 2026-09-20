@@ -79,7 +79,7 @@ def summarize(results: list[dict], interpretation: str | None = None) -> str:
     line when the report has one. Educational only — never a diagnosis.
     """
     if not results:
-        return "Analyzed 0 biomarker(s): 0 normal."
+        return "Analyzed 0 biomarker(s): 0 normal. Educational summary only — not a diagnosis."
 
     abnormal = [r for r in results if r["status"] in ("LOW", "HIGH")]
     unknowns = [r for r in results if r["status"] == "unknown"]

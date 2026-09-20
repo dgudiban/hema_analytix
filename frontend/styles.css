@@ -254,3 +254,52 @@ select {
 }
 .auth-form button:disabled { opacity: 0.6; cursor: wait; }
 .auth-error { color: var(--red); font-size: 0.9rem; margin-top: 0.75rem; }
+
+/* ---- Quick summary ---- */
+.count-row { display: flex; gap: 0.75rem; margin: 1rem 0; }
+.count-box {
+  flex: 1; text-align: center; padding: 0.9rem 0.5rem;
+  border-radius: 8px; background: #0f172a; border: 1px solid #334155;
+}
+.count-box span { display: block; font-size: 1.6rem; font-weight: 700; }
+.count-box label { font-size: 0.8rem; color: var(--muted); }
+.count-box.below span { color: #60a5fa; }
+.count-box.within span { color: var(--green); }
+.count-box.above span { color: var(--amber); }
+.notable { margin: 0.5rem 0 1rem; padding-left: 1.2rem; }
+.notable li { margin: 0.25rem 0; }
+.btn-row { display: flex; gap: 0.75rem; margin-top: 1rem; }
+.btn-row button {
+  padding: 0.6rem 1.1rem; border-radius: 6px; border: none; cursor: pointer;
+  background: var(--accent); color: #0b1220; font-weight: 700;
+}
+.btn-row button.secondary {
+  background: none; border: 1px solid var(--accent); color: var(--accent);
+}
+
+/* ---- Grouped results ---- */
+.result-group { margin-bottom: 1.25rem; }
+.group-head {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 1.05rem; margin: 0 0 0.5rem;
+  padding-bottom: 0.4rem; border-bottom: 1px solid #334155;
+}
+.group-count {
+  margin-left: auto; font-size: 0.85rem; color: var(--muted);
+  background: #0f172a; border-radius: 12px; padding: 0.1rem 0.6rem;
+}
+.bio-row { border: 1px solid #243145; border-radius: 8px; margin-bottom: 0.4rem; overflow: hidden; }
+.bio-row-head {
+  width: 100%; display: flex; align-items: center; gap: 0.75rem;
+  background: none; border: none; color: var(--text);
+  padding: 0.65rem 0.8rem; cursor: pointer; font-size: 0.95rem; text-align: left;
+}
+.bio-row-head:hover { background: #1a2740; }
+.bio-name { flex: 1; }
+.bio-value { color: var(--muted); white-space: nowrap; }
+.bio-value strong { color: var(--text); }
+.chev { color: var(--muted); font-size: 0.8rem; }
+.bio-row-detail { padding: 0 0.8rem 0.8rem; border-top: 1px dashed #243145; }
+.row-detail-line { margin-top: 0.5rem; font-size: 0.9rem; color: var(--muted); }
+.row-detail-line strong { color: var(--text); }
+.range-bar-slot { margin-top: 0.75rem; }

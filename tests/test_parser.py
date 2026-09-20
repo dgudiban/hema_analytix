@@ -246,7 +246,7 @@ def test_summary_text(spec):
 
 def test_empty_text(spec):
     assert parse_service.parse_text("", spec) == []
-    assert analysis_service.summarize([]) == "Analyzed 0 biomarker(s): 0 normal."
+    assert analysis_service.summarize([]) == "Analyzed 0 biomarker(s): 0 normal. Educational summary only — not a diagnosis."
 
 
 def test_parenthetical_alias_and_bare_range(spec):

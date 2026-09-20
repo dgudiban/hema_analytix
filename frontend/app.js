@@ -142,7 +142,76 @@ function fmtRange(r) {
   return `${r.ref_low} – ${r.ref_high}`;
 }
 
+const GROUPS = [
+  { key: "below", icon: "🔵", title: "Below range", match: (s) => s === "LOW" },
+  { key: "above", icon: "🟠", title: "Above range", match: (s) => s === "HIGH" },
+  { key: "within", icon: "🟢", title: "Within range", match: (s) => s === "NORMAL" },
+  { key: "unknown", icon: "⚪", title: "No reference range on report", match: (s) => s !== "LOW" && s !== "HIGH" && s !== "NORMAL" },
+];
+
+function rangeBarHTML(r) {
+  // Placeholder slot: Phase 4 paints the LOW—NORMAL—HIGH indicator here.
+  return `<div class="range-bar-slot" data-biomarker="${escapeHtml(r.biomarker_id)}"></div>`;
+}
+
+function biomarkerRowHTML(r) {
+  const calcBadge = r.source === "calculated"
+    ? ` <span class="src-badge" title="${escapeHtml(r.method || "calculated")}">calculated</span>`
+    : "";
+  const flagLine = r.flag ? `<div class="row-detail-line">Lab flag: <strong>${escapeHtml(r.flag)}</strong></div>` : "";
+  const rangeLine = (r.ref_low != null || r.ref_high != null)
+    ? `<div class="row-detail-line">Reference: ${escapeHtml(fmtRange(r))} ${escapeHtml(r.unit)}</div>`
+    : `<div class="row-detail-line muted">No reference range printed on this report.</div>`;
+  return `
+    <div class="bio-row" data-status="${r.status}">
+      <button type="button" class="bio-row-head" aria-expanded="false">
+        <span class="bio-name">${escapeHtml(r.standard_name)}${calcBadge}</span>
+        <span class="bio-value"><strong>${r.value}</strong> ${escapeHtml(r.unit)}</span>
+        <span class="pill ${r.status.toLowerCase()}">${r.status}</span>
+        <span class="chev">▸</span>
+      </button>
+      <div class="bio-row-detail hidden">
+        ${rangeBarHTML(r)}
+        <div class="row-detail-line">As reported: ${escapeHtml(r.original_name)}</div>
+        ${flagLine}
+        ${rangeLine}
+      </div>
+    </div>`;
+}
+
+function renderQuickSummary(data) {
+  const results = data.results || [];
+  const below = results.filter((r) => r.status === "LOW");
+  const above = results.filter((r) => r.status === "HIGH");
+  const within = results.filter((r) => r.status === "NORMAL");
+
+  $("count-below").textContent = below.length;
+  $("count-within").textContent = within.length;
+  $("count-above").textContent = above.length;
+
+  const dateStr = data.report_date ? ` · ${data.report_date}` : "";
+  $("summary-meta").textContent = `${results.length} biomarker${results.length === 1 ? "" : "s"} detected${dateStr}`;
+  $("summary-text").textContent = data.summary || "";
+
+  const notable = $("notable-list");
+  notable.innerHTML = "";
+  const flagged = [...below, ...above].slice(0, 6);
+  if (flagged.length === 0) {
+    notable.innerHTML = `<li class="muted">All values are within their reference ranges.</li>`;
+  } else {
+    for (const r of flagged) {
+      const li = document.createElement("li");
+      const dir = r.status === "LOW" ? "below" : "above";
+      li.innerHTML = `<strong>${escapeHtml(r.standard_name)}</strong> — ${dir} range (${r.value} ${escapeHtml(r.unit)})`;
+      notable.appendChild(li);
+    }
+  }
+  $("summary-card").classList.remove("hidden");
+}
+
 function renderResults(data) {
+  renderQuickSummary(data);
+
   $("results-card").classList.remove("hidden");
   const detail = data.extraction_detail || {};
   const failed = detail.failed_chunks || 0;
@@ -155,33 +224,43 @@ function renderResults(data) {
       : ` <span class="src-badge" title="Values matched by the rule-based parser.${failNote}">rule-parsed</span>`;
   $("report-title").innerHTML = `Report #${data.report_id}${srcBadge}`;
   lastReportId = data.report_id;
-  $("summary").textContent = data.summary;
   lastAiExplanation = data.ai_explanation;
   $("ai-panel").classList.add("hidden");
 
-  const body = $("results-body");
-  body.innerHTML = "";
-  for (const r of data.results) {
-    const nameCell =
-      `${escapeHtml(r.original_name)} → <strong>${escapeHtml(r.standard_name)}</strong>` +
-      (r.source === "calculated"
-        ? ` <span class="src-badge" title="${escapeHtml(r.method || "calculated")}">calculated</span>`
-        : "");
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${nameCell}</td>
-      <td><strong>${r.value}</strong></td>
-      <td>${escapeHtml(r.unit)}</td>
-      <td>${escapeHtml(fmtRange(r))}</td>
-      <td>${r.flag ? escapeHtml(r.flag) : "—"}</td>
-      <td><span class="pill ${r.status.toLowerCase()}">${r.status}</span></td>`;
-    body.appendChild(tr);
+  const groupsEl = $("results-groups");
+  groupsEl.innerHTML = "";
+  const results = data.results || [];
+  for (const g of GROUPS) {
+    const members = results.filter((r) => g.match(r.status));
+    if (members.length === 0) continue;
+    const section = document.createElement("section");
+    section.className = `result-group ${g.key}`;
+    section.innerHTML = `
+      <h3 class="group-head">${g.icon} ${g.title} <span class="group-count">${members.length}</span></h3>
+      <div class="group-body"></div>`;
+    const body = section.querySelector(".group-body");
+    for (const r of members) {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = biomarkerRowHTML(r);
+      body.appendChild(wrap.firstElementChild);
+    }
+    groupsEl.appendChild(section);
+  }
+  if (results.length === 0) {
+    groupsEl.innerHTML = `<p class="muted">No biomarkers found in this report's text.</p>`;
   }
 
-  if (data.results.length === 0) {
-    body.innerHTML = `<tr><td colspan="6" class="muted">No biomarkers found in this PDF's text.</td></tr>`;
-  }
-  $("results-card").scrollIntoView({ behavior: "smooth" });
+  // Expandable rows.
+  groupsEl.querySelectorAll(".bio-row-head").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const detailEl = btn.nextElementSibling;
+      const open = detailEl.classList.toggle("hidden");
+      btn.setAttribute("aria-expanded", String(!open));
+      btn.querySelector(".chev").textContent = open ? "▸" : "▾";
+    });
+  });
+
+  $("summary-card").scrollIntoView({ behavior: "smooth" });
 }
 
 function escapeHtml(s) {
@@ -224,6 +303,7 @@ async function handleUpload(event) {
     if (!anRes.ok) throw new Error("Analysis failed");
     const analyzed = await anRes.json();
 
+    analyzed.report_date = uploaded.report_date;
     renderResults(analyzed);
     await loadHistory();
     await loadTrend(); // a new report may add trend points
@@ -273,8 +353,9 @@ async function loadHistory() {
         const detail = await dRes.json();
         renderResults({
           report_id: detail.id,
+          report_date: detail.report_date,
           results: detail.results,
-          summary: `Saved analysis of ${detail.filename}: ${detail.results.length} biomarker(s).`,
+          summary: detail.summary || `Saved analysis of ${detail.filename}: ${detail.results.length} biomarker(s).`,
           ai_explanation: null,
           extraction_source: detail.extraction_source || "rules",
         });
@@ -449,6 +530,10 @@ async function handleChat(e) {
 $("chat-form").addEventListener("submit", handleChat);
 
 $("upload-form").addEventListener("submit", handleUpload);
+$("view-results-btn").addEventListener("click", () =>
+  $("results-card").scrollIntoView({ behavior: "smooth" }));
+$("ask-about-btn").addEventListener("click", () =>
+  $("chat-card").scrollIntoView({ behavior: "smooth" }));
 $("explain-btn").addEventListener("click", handleExplain);
 $("trend-form").addEventListener("submit", (e) => { e.preventDefault(); loadTrend(); });
 $("trend-select").addEventListener("change", loadTrend);

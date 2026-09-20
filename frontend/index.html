@@ -54,31 +54,33 @@
       <div id="upload-note" class="note hidden"></div>
     </section>
 
+    <section class="card hidden" id="summary-card">
+      <h2>Report analyzed ✓</h2>
+      <p class="muted" id="summary-meta"></p>
+      <div class="count-row">
+        <div class="count-box below"><span id="count-below">0</span><label>Below range</label></div>
+        <div class="count-box within"><span id="count-within">0</span><label>Within range</label></div>
+        <div class="count-box above"><span id="count-above">0</span><label>Above range</label></div>
+      </div>
+      <p id="summary-text" class="summary"></p>
+      <ul id="notable-list" class="notable"></ul>
+      <div class="btn-row">
+        <button id="view-results-btn" type="button">View detailed results</button>
+        <button id="ask-about-btn" type="button" class="secondary">Ask BloodIQ</button>
+      </div>
+    </section>
+
     <section class="card hidden" id="results-card">
       <div class="results-head">
         <h2 id="report-title">Report</h2>
         <button id="explain-btn" class="secondary">Explain with AI</button>
       </div>
-      <p id="summary" class="summary"></p>
+      <div id="results-groups"></div>
 
       <div id="ai-panel" class="ai-panel hidden">
         <h3>AI explanation</h3>
         <p id="ai-text"></p>
       </div>
-
-      <table id="results-table">
-        <thead>
-          <tr>
-            <th>Biomarker</th>
-            <th>Value</th>
-            <th>Unit</th>
-            <th>Reference range</th>
-            <th>Lab flag</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="results-body"></tbody>
-      </table>
     </section>
 
     <section class="card" id="trends-card">

@@ -184,6 +184,7 @@ def _result_out(r: Result) -> dict:
         "status": r.status,
         "ref_low": r.ref_low,
         "ref_high": r.ref_high,
+        "flag": r.flag,
         "source": r.source,
         "method": r.method,
     }
@@ -196,11 +197,13 @@ def get_report(
     user: User = Depends(get_current_user),
 ):
     report = _owned_report(db, report_id, user)
+    results_out = [_result_out(r) for r in report.results]
     return {
         "id": report.id,
         "filename": report.filename,
         "report_date": report.report_date,
         "uploaded_at": report.uploaded_at,
-        "results": [_result_out(r) for r in report.results],
+        "results": results_out,
+        "summary": analysis_service.summarize(results_out),
         "extraction_source": report.extraction_source or "rules",
     }
