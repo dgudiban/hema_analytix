@@ -183,6 +183,47 @@ def test_upload_analyze_flow(upload_dir):
     assert all("flag" in r for r in detail["results"])
 
 
+def test_compare_reports(upload_dir):
+    _, a = _upload_and_analyze(
+        [
+            "Report Date: 01/15/2026",
+            "Hemoglobin 11.2 g/dL (12.0-15.5)",
+            "Total Cholesterol 190 mg/dL (<200)",
+        ],
+        filename="a.pdf",
+    )
+    _, b = _upload_and_analyze(
+        [
+            "Report Date: 02/15/2026",
+            "Hemoglobin 13.0 g/dL (12.0-15.5)",
+            "Vitamin D 12 ng/mL",
+        ],
+        filename="b.pdf",
+    )
+    res = client.get(
+        f"/api/reports/compare?a={a['report_id']}&b={b['report_id']}",
+        headers=_headers(),
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["a"]["id"] == a["report_id"]
+    assert data["b"]["id"] == b["report_id"]
+    by_name = {r["standard_name"]: r for r in data["rows"]}
+    assert by_name["Hemoglobin"]["change"] == "up"
+    assert by_name["Hemoglobin"]["a_value"] == pytest.approx(11.2)
+    assert by_name["Hemoglobin"]["b_value"] == pytest.approx(13.0)
+    assert by_name["Total Cholesterol"]["change"] == "missing"
+    assert by_name["Total Cholesterol"]["b_value"] is None
+    assert by_name["Vitamin D"]["change"] == "new"
+    assert by_name["Vitamin D"]["a_value"] is None
+    # Direction is never dressed up as better/worse.
+    assert all(r["change"] in {"up", "down", "same", "new", "missing"} for r in data["rows"])
+    # Cross-account comparison is unreachable.
+    assert client.get(
+        f"/api/reports/compare?a={a['report_id']}&b=999999", headers=_headers()
+    ).status_code == 404
+
+
 def test_upload_analyze_with_calculated(upload_dir):
     _, analyzed = _upload_and_analyze(
         [

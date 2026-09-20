@@ -101,6 +101,26 @@
       <p id="trend-empty" class="muted">No trend data yet — upload at least one report first.</p>
     </section>
 
+    <section class="card" id="compare-card">
+      <h2>Compare reports</h2>
+      <p class="muted">Pick two reports to see what changed between them. Arrows show direction only — an increase is not automatically better, a decrease not automatically worse.</p>
+      <form id="compare-form">
+        <select id="compare-a" aria-label="Earlier report"></select>
+        <select id="compare-b" aria-label="Later report"></select>
+        <button type="submit" class="secondary">Compare</button>
+      </form>
+      <div id="compare-result" class="hidden">
+        <p id="compare-title" class="muted small"></p>
+        <div class="table-wrap">
+          <table id="compare-table" class="compare-table">
+            <thead><tr><th>Biomarker</th><th id="compare-head-a">A</th><th id="compare-head-b">B</th><th>Change</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <p id="compare-empty" class="muted">Upload at least two reports to compare them.</p>
+    </section>
+
     <section class="card" id="history-card">
       <h2>Recent reports</h2>
       <ul id="history-list" class="history"></ul>

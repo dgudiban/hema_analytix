@@ -58,6 +58,9 @@ def get_trend(db, biomarker_id: str, user_id: int | None = None) -> dict | None:
             "report_date": report_date.isoformat() if report_date else None,
             "value": r.value,
             "unit": r.unit,
+            "ref_low": r.ref_low,
+            "ref_high": r.ref_high,
+            "status": r.status,
         }
         if normalize_unit(r.unit) == normalize_unit(baseline_unit):
             points.append(point)

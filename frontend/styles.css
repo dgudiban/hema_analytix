@@ -336,3 +336,17 @@ select {
 .rvalue { position: absolute; transform: translateX(-50%); top: 0.9rem; color: var(--text); font-weight: 700; white-space: nowrap; }
 .rcaption { margin-top: 0.35rem; font-size: 0.85rem; color: var(--muted); }
 .rcaption strong { color: var(--text); }
+
+/* ---- Phase 5: compare table + trend bars ---- */
+.table-wrap { overflow-x: auto; margin-top: 0.75rem; }
+.compare-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.compare-table th, .compare-table td { text-align: left; padding: 0.45rem 0.6rem; border-bottom: 1px solid #243145; }
+.compare-table th { color: var(--muted); font-weight: 600; font-size: 0.8rem; }
+.chg { display: inline-block; min-width: 1.6rem; text-align: center; font-weight: 700; border-radius: 10px; padding: 0.1rem 0.5rem; font-size: 0.85rem; }
+.chg-up { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.chg-down { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+.chg-same { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+.chg-new { background: rgba(52, 211, 153, 0.15); color: #34d399; font-size: 0.75rem; }
+.chg-missing { background: rgba(100, 116, 139, 0.2); color: #94a3b8; font-size: 0.75rem; }
+#compare-form { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+#compare-form select { flex: 1; min-width: 180px; }

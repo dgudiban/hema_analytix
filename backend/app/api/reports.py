@@ -14,6 +14,7 @@ from app.models.db import get_db
 from app.models.entities import Report, Result, User
 from app.schemas.dto import (
     AnalyzeResponse,
+    CompareResponse,
     ReportDetail,
     ReportSummary,
     TrendResponse,
@@ -188,6 +189,59 @@ def _result_out(r: Result) -> dict:
         "source": r.source,
         "method": r.method,
     }
+
+
+@router.get("/compare", response_model=CompareResponse)
+def compare_reports(
+    a: int,
+    b: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Side-by-side comparison of two of the patient's reports.
+
+    Rows carry ``change`` markers: up / down / same / new / missing.
+    Direction is never labeled as better or worse.
+    """
+    ra = _owned_report(db, a, user)
+    rb = _owned_report(db, b, user)
+
+    def side(r: Report) -> dict:
+        return {"id": r.id, "filename": r.filename, "report_date": r.report_date}
+
+    am = {r.biomarker_id: r for r in ra.results}
+    bm = {r.biomarker_id: r for r in rb.results}
+    rows = []
+    for bid in sorted(
+        set(am) | set(bm), key=lambda x: (am.get(x) or bm.get(x)).standard_name
+    ):
+        ra_r, rb_r = am.get(bid), bm.get(bid)
+        std = (ra_r or rb_r).standard_name
+        unit = (rb_r or ra_r).unit
+        if ra_r is not None and rb_r is not None:
+            if rb_r.value > ra_r.value:
+                change = "up"
+            elif rb_r.value < ra_r.value:
+                change = "down"
+            else:
+                change = "same"
+        elif rb_r is not None:
+            change = "new"
+        else:
+            change = "missing"
+        rows.append(
+            {
+                "biomarker_id": bid,
+                "standard_name": std,
+                "unit": unit,
+                "a_value": ra_r.value if ra_r else None,
+                "b_value": rb_r.value if rb_r else None,
+                "a_status": ra_r.status if ra_r else None,
+                "b_status": rb_r.status if rb_r else None,
+                "change": change,
+            }
+        )
+    return {"a": side(ra), "b": side(rb), "rows": rows}
 
 
 @router.get("/{report_id}", response_model=ReportDetail)

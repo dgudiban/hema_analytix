@@ -127,8 +127,13 @@ def _patient_facts(
         trend = trend_service.get_trend(db, b["biomarker_id"], user_id=user_id)
         if trend and len(trend["points"]) >= 2:
             latest = trend["points"][-1]
+            # Neutral direction words only: up/down/stable are never
+            # presented as better or worse.
+            direction = {"improving": "up", "declining": "down"}.get(
+                trend["direction"], trend["direction"]
+            )
             lines.append(
-                f"- Trend for {trend['standard_name']}: {trend['direction']} "
+                f"- Trend for {trend['standard_name']}: direction {direction} "
                 f"across {len(trend['points'])} reports "
                 f"(latest {latest['value']} {latest['unit']} "
                 f"on {latest['report_date']})"

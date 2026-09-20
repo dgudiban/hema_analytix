@@ -42,6 +42,7 @@ function showApp(user) {
   $("user-name").textContent = `👤 ${user.name}`;
   loadHistory();
   loadTrend();
+  loadCompareReports();
 }
 
 function logout() {
@@ -437,6 +438,7 @@ async function handleUpload(event) {
     renderResults(analyzed);
     await loadHistory();
     await loadTrend(); // a new report may add trend points
+    await loadCompareReports();
   } catch (err) {
     alert(`Error: ${err.message}`);
   } finally {
@@ -500,6 +502,75 @@ async function loadHistory() {
 
 /* ---- Trends ---- */
 
+const CHANGE_BADGE = {
+  up: ["↑", "chg-up", "increased"],
+  down: ["↓", "chg-down", "decreased"],
+  same: ["→", "chg-same", "unchanged"],
+  new: ["new", "chg-new", "present only in the later report"],
+  missing: ["missing", "chg-missing", "present only in the earlier report"],
+};
+
+async function loadCompareReports() {
+  const aSel = $("compare-a"), bSel = $("compare-b");
+  try {
+    const res = await api("/api/reports");
+    const reports = (await res.json()).slice().sort((x, y) => x.id - y.id);
+    aSel.innerHTML = ""; bSel.innerHTML = "";
+    for (const r of reports) {
+      const label = `#${r.id} ${r.filename}${r.report_date ? ` · ${r.report_date}` : ""} (${r.result_count})`;
+      aSel.appendChild(new Option(label, r.id));
+      bSel.appendChild(new Option(label, r.id));
+    }
+    if (reports.length >= 2) {
+      aSel.value = reports[reports.length - 2].id;
+      bSel.value = reports[reports.length - 1].id;
+      $("compare-empty").classList.add("hidden");
+    } else {
+      $("compare-empty").classList.remove("hidden");
+    }
+  } catch {
+    $("compare-empty").textContent = "Could not load reports.";
+    $("compare-empty").classList.remove("hidden");
+  }
+}
+
+async function runCompare(e) {
+  e.preventDefault();
+  const a = $("compare-a").value, b = $("compare-b").value;
+  if (!a || !b) return;
+  const resEl = $("compare-result");
+  try {
+    const res = await api(`/api/reports/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
+    if (!res.ok) throw new Error("compare failed");
+    const data = await res.json();
+    const fmtSide = (s) => `#${s.id} ${s.filename}${s.report_date ? ` · ${s.report_date}` : ""}`;
+    $("compare-head-a").textContent = `A — ${fmtSide(data.a)}`;
+    $("compare-head-b").textContent = `B — ${fmtSide(data.b)}`;
+    $("compare-title").textContent =
+      `Comparing earlier ${fmtSide(data.a)} with later ${fmtSide(data.b)}.`;
+    const tb = $("compare-table").querySelector("tbody");
+    tb.innerHTML = "";
+    const statusPill = (s) => s ? `<span class="pill ${s.toLowerCase()}">${s}</span>` : `<span class="muted">—</span>`;
+    const valCell = (v, s, unit) =>
+      v == null ? `<span class="muted">—</span>` : `${v} ${escapeHtml(unit || "")} ${statusPill(s)}`;
+    for (const row of data.rows) {
+      const [mark, cls, title] = CHANGE_BADGE[row.change] || CHANGE_BADGE.same;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${escapeHtml(row.standard_name)}</strong></td>
+        <td>${valCell(row.a_value, row.a_status, row.unit)}</td>
+        <td>${valCell(row.b_value, row.b_status, row.unit)}</td>
+        <td><span class="chg ${cls}" title="${title}">${mark}</span></td>`;
+      tb.appendChild(tr);
+    }
+    resEl.classList.remove("hidden");
+  } catch {
+    resEl.classList.add("hidden");
+    $("compare-empty").textContent = "Could not compare those reports.";
+    $("compare-empty").classList.remove("hidden");
+  }
+}
+
 async function loadBiomarkers() {
   const sel = $("trend-select");
   try {
@@ -535,7 +606,8 @@ async function loadTrend() {
     result.classList.remove("hidden");
     empty.classList.add("hidden");
     const dir = $("trend-direction");
-    dir.textContent = `${trend.standard_name}: ${trend.direction}`;
+    const dirLabel = TREND_DIR_LABEL[trend.direction] || trend.direction;
+    dir.textContent = `${trend.standard_name}: ${dirLabel} across ${trend.points.length} report${trend.points.length === 1 ? "" : "s"}`;
     dir.className = `trend-direction ${trend.direction}`;
     drawTrend(trend);
     const note = $("trend-note");
@@ -549,7 +621,13 @@ async function loadTrend() {
   }
 }
 
+const TREND_DIR_LABEL = { improving: "trending up", declining: "trending down", stable: "stable" };
+
 function drawTrend(trend) {
+  // Bar chart, one bar per report. Bars are colored by that report's own
+  // status; the shaded band is the reference range printed on the LATEST
+  // report (labeled as such) — earlier reports may have printed different
+  // ranges, shown per-bar in the tooltip.
   const canvas = $("trend-chart");
   const ctx = canvas.getContext("2d");
   const W = canvas.width, H = canvas.height;
@@ -557,12 +635,36 @@ function drawTrend(trend) {
   const pts = trend.points;
   if (pts.length === 0) return;
 
+  const STATUS_FILL = { LOW: "#60a5fa", NORMAL: "#34d399", HIGH: "#fbbf24" };
   const vals = pts.map((p) => p.value);
   let min = Math.min(...vals), max = Math.max(...vals);
+  const latest = pts[pts.length - 1];
+  const bandLo = latest.ref_low, bandHi = latest.ref_high;
+  if (bandLo != null) min = Math.min(min, bandLo);
+  if (bandHi != null) max = Math.max(max, bandHi);
   if (min === max) { min -= 1; max += 1; }
-  const padL = 52, padR = 16, padT = 16, padB = 40;
-  const xs = (i) => padL + (i * (W - padL - padR)) / Math.max(pts.length - 1, 1);
+  const spanPad = (max - min) * 0.08;
+  min -= spanPad; max += spanPad;
+
+  const padL = 52, padR = 16, padT = 16, padB = 44;
   const ys = (v) => H - padB - ((v - min) / (max - min)) * (H - padT - padB);
+  const slot = (W - padL - padR) / pts.length;
+  const barW = Math.min(64, slot * 0.55);
+  const xs = (i) => padL + slot * i + slot / 2;
+
+  // Normal band from the latest report's printed range.
+  if (bandLo != null && bandHi != null && bandHi > bandLo) {
+    ctx.fillStyle = "rgba(52, 211, 153, 0.12)";
+    ctx.fillRect(padL, ys(bandHi), W - padL - padR, ys(bandLo) - ys(bandHi));
+    ctx.strokeStyle = "rgba(52, 211, 153, 0.45)";
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(padL, ys(bandHi)); ctx.lineTo(W - padR, ys(bandHi)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(padL, ys(bandLo)); ctx.lineTo(W - padR, ys(bandLo)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#34d399";
+    ctx.font = "10px system-ui";
+    ctx.fillText(`ref on latest report: ${bandLo}–${bandHi}`, padL + 4, ys(bandHi) - 5);
+  }
 
   // Gridlines + y labels.
   ctx.font = "11px system-ui";
@@ -576,26 +678,44 @@ function drawTrend(trend) {
     ctx.fillText(v.toFixed(1), 6, y + 4);
   }
 
-  // Line.
-  ctx.strokeStyle = "#38bdf8";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  pts.forEach((p, i) => (i ? ctx.lineTo(xs(i), ys(p.value)) : ctx.moveTo(xs(i), ys(p.value))));
-  ctx.stroke();
-
-  // Points + date labels.
+  // Bars.
+  canvas._trendPts = pts.map((p, i) => ({ p, x: xs(i) - barW / 2, w: barW, yTop: ys(p.value), yBase: ys(Math.max(min, 0)) }));
   pts.forEach((p, i) => {
-    ctx.fillStyle = "#38bdf8";
-    ctx.beginPath(); ctx.arc(xs(i), ys(p.value), 4, 0, Math.PI * 2); ctx.fill();
+    const x = xs(i) - barW / 2;
+    const yTop = ys(p.value);
+    const yBase = ys(Math.max(min, 0));
+    ctx.fillStyle = STATUS_FILL[p.status] || "#64748b";
+    ctx.fillRect(x, yTop, barW, Math.max(2, yBase - yTop));
+    ctx.fillStyle = "#e2e8f0";
+    ctx.fillText(String(p.value), x, yTop - 6);
     ctx.fillStyle = "#94a3b8";
-    const label = (p.report_date || "").slice(5) || "?"; // MM-DD
-    ctx.fillText(label, xs(i) - 14, H - 22);
-    ctx.fillText(String(p.value), xs(i) - 14, H - 8);
+    const label = (p.report_date || "").slice(5) || "?";
+    ctx.fillText(label, xs(i) - 14, H - 26);
+    const rng = p.ref_low != null && p.ref_high != null ? `${p.ref_low}–${p.ref_high}`
+      : p.ref_high != null ? `<${p.ref_high}` : p.ref_low != null ? `>${p.ref_low}` : "no range";
+    ctx.fillText(rng, xs(i) - 20, H - 10);
   });
 
   ctx.fillStyle = "#94a3b8";
   ctx.fillText(trend.unit || "", W - padR - 30, padT + 4);
 }
+
+// Hover tooltip for the trend bars (native title via canvas redraw is
+// overkill; show per-bar details in the note line on click instead).
+$("trend-chart").addEventListener("click", (e) => {
+  const info = e.currentTarget._trendPts;
+  if (!info) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (e.currentTarget.width / rect.width);
+  const hit = info.find((b) => mx >= b.x - 6 && mx <= b.x + b.w + 6);
+  if (hit) {
+    const p = hit.p;
+    const rng = p.ref_low != null && p.ref_high != null ? `${p.ref_low} – ${p.ref_high} ${p.unit}`
+      : "no reference range printed";
+    $("trend-note").textContent =
+      `${p.report_date || "undated"}: ${p.value} ${p.unit} — ref ${rng}, status ${p.status || "unknown"}.`;
+  }
+});
 
 /* ---- Chat ---- */
 
@@ -667,6 +787,7 @@ $("ask-about-btn").addEventListener("click", () =>
 $("explain-btn").addEventListener("click", handleExplain);
 $("trend-form").addEventListener("submit", (e) => { e.preventDefault(); loadTrend(); });
 $("trend-select").addEventListener("change", loadTrend);
+$("compare-form").addEventListener("submit", runCompare);
 checkHealth();
 loadBiomarkers();
 initAuth();

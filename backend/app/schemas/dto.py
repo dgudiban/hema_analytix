@@ -75,6 +75,9 @@ class TrendPoint(BaseModel):
     report_date: str | None
     value: float
     unit: str
+    ref_low: float | None = None
+    ref_high: float | None = None
+    status: str | None = None  # "LOW" | "NORMAL" | "HIGH" | "unknown"
 
 
 class TrendExcludedPoint(TrendPoint):
@@ -88,6 +91,31 @@ class TrendResponse(BaseModel):
     points: list[TrendPoint]
     excluded: list[TrendExcludedPoint] = []
     direction: str  # "improving" | "declining" | "stable"
+
+
+class CompareSide(BaseModel):
+    id: int
+    filename: str
+    report_date: date | None = None
+
+
+class CompareRow(BaseModel):
+    biomarker_id: str
+    standard_name: str
+    unit: str | None = None
+    a_value: float | None = None
+    b_value: float | None = None
+    a_status: str | None = None
+    b_status: str | None = None
+    # "up" | "down" | "same" | "new" | "missing" — direction only, never
+    # presented as better/worse.
+    change: str
+
+
+class CompareResponse(BaseModel):
+    a: CompareSide
+    b: CompareSide
+    rows: list[CompareRow]
 
 
 class ChatMessage(BaseModel):
