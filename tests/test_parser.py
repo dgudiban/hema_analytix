@@ -325,3 +325,19 @@ def test_summary_findings_format(spec):
     assert "Packed Cell Volume HIGH at 57.5 % (ref 40–50, lab flag: High)" in summary
     assert "Lab interpretation: Further confirm for Anemia." in summary
     assert "not a diagnosis" in summary
+
+
+def test_cumm_units_captured_and_equivalent(spec):
+    from app.utils.units import normalize_unit
+
+    parsed = parse_service.parse_text(
+        "Total RBC count 5.2 4.5 - 5.5 mill/cumm\n"
+        "Total WBC count 9000 4000-11000 cumm",
+        spec,
+    )
+    by_id = {p["biomarker_id"]: p for p in parsed}
+    assert by_id["BM002"]["unit"] == "mill/cumm"
+    assert by_id["BM003"]["unit"] == "cumm"
+    # 1 cumm == 1 uL: trend compatibility across unit spellings.
+    assert normalize_unit("cumm") == normalize_unit("/uL")
+    assert normalize_unit("mill/cumm") == normalize_unit("million/µL")

@@ -33,9 +33,9 @@ _PAREN_ABBR = r"(?:\s*\([^()\n]{1,16}\))?"
 # Curated unit vocabulary — deliberately restrictive so a following word
 # (e.g. the next line's biomarker name) is never swallowed as a "unit".
 _UNIT_TOKEN = (
-    r"K/µL|K/uL|million/µL|mL/min/1\.73\s?m²|mL/min/1\.73\s?m2|"
+    r"K/µL|K/uL|million/µL|mill/cumm|mL/min/1\.73\s?m²|mL/min/1\.73\s?m2|"
     r"µIU/mL|uIU/mL|µg/dL|ug/dL|mmol/L|mEq/L|mg/dL|mg/L|g/dL|"
-    r"ng/dL|ng/mL|pg/mL|mIU/L|mm/hr|U/L|fL|pg|%|/µL|/uL"
+    r"ng/dL|ng/mL|pg/mL|mIU/L|mm/hr|U/L|fL|pg|%|/µL|/uL|/cumm|cumm"
 )
 
 # Optional separator between a biomarker name and its value: ":  ", " - ", " = ", "  "
@@ -114,11 +114,12 @@ def _to_float(raw: str) -> float | None:
         return None
 
 
-def _parse_reference_range(suffix: str) -> tuple[float | None, float | None]:
+def _parse_reference_range(suffix: str) -> tuple[float | None, float | None, int | None]:
     """Find a reference range in *suffix* (text after value/unit, same line).
 
-    Returns (ref_low, ref_high); either may be None for open-ended ranges,
-    both None when no range is printed.
+    Returns (ref_low, ref_high, range_end); either bound may be None for
+    open-ended ranges, and range_end is the index just past the matched range
+    (None when no range is printed) so a trailing unit can be recovered.
     """
     best: tuple[int, str, re.Match] | None = None
     for kind, pattern in (
@@ -131,15 +132,32 @@ def _parse_reference_range(suffix: str) -> tuple[float | None, float | None]:
         if match and (best is None or match.start() < best[0]):
             best = (match.start(), kind, match)
     if best is None:
-        return None, None
+        return None, None, None
     _, kind, match = best
     if kind == "two":
-        return _to_float(match.group("lo")), _to_float(match.group("hi"))
+        return (
+            _to_float(match.group("lo")),
+            _to_float(match.group("hi")),
+            match.end(),
+        )
     comp = match.group("comp")
     num = _to_float(match.group("num"))
     if comp.startswith((">", "≥")):
-        return num, None
-    return None, num
+        return num, None, match.end()
+    return None, num, match.end()
+
+
+def _unit_after_range(suffix: str, range_end: int | None) -> str | None:
+    """Unit printed after the reference range, e.g. "5.2 4.5 - 5.5 mill/cumm".
+
+    Columnar layouts can separate the range and unit by wide whitespace.
+    """
+    if range_end is None:
+        return None
+    match = re.match(
+        r"\s*(?P<unit>" + _UNIT_TOKEN + r")(?!\w)", suffix[range_end : range_end + 80]
+    )
+    return match.group("unit").strip() if match else None
 
 
 def _parse_flag(suffix: str) -> str | None:
@@ -162,11 +180,15 @@ def extract_interpretation(text: str) -> str | None:
 
 
 def _line_suffix(text: str, end: int) -> str:
-    """Text from *end* to the end of the line (capped), where ranges live."""
+    """Text from *end* to the end of the line (capped), where ranges live.
+
+    The cap is generous (200 chars) because columnar lab layouts can put the
+    reference range and unit far to the right of the value.
+    """
     line_end = text.find("\n", end)
     if line_end == -1:
         line_end = len(text)
-    return text[end : min(line_end, end + 100)]
+    return text[end : min(line_end, end + 200)]
 
 
 def _overlaps(consumed: list[tuple[int, int]], start: int, end: int) -> bool:
@@ -212,14 +234,15 @@ def parse_text(text: str, spec: list[dict]) -> list[dict]:
                 continue
             raw_unit = (match.group("unit") or "").strip()
             suffix = _line_suffix(text, end)
-            ref_low, ref_high = _parse_reference_range(suffix)
+            ref_low, ref_high, range_end = _parse_reference_range(suffix)
+            unit = raw_unit or _unit_after_range(suffix, range_end) or bm["typical_units"]
             consumed.append((start, end))
             found[bid] = {
                 "biomarker_id": bid,
                 "standard_name": bm["standard_name"],
                 "original_name": match.group("alias"),
                 "value": value,
-                "unit": raw_unit or bm["typical_units"],
+                "unit": unit,
                 "ref_low": ref_low,
                 "ref_high": ref_high,
                 "flag": _parse_flag(suffix),
