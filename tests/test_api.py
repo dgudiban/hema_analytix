@@ -102,7 +102,7 @@ def test_biomarkers_endpoint():
     res = client.get("/api/biomarkers")
     assert res.status_code == 200
     data = res.json()
-    assert len(data) == 46
+    assert len(data) == 47
     bm001 = next(b for b in data if b["biomarker_id"] == "BM001")
     assert bm001["standard_name"] == "Hemoglobin"
     assert bm001["common_aliases"] == ["Hb", "HGB", "Hemoglobin"]

@@ -682,6 +682,22 @@
       "supports_trend": true,
       "calculation_type": "Direct measurement",
       "special_handling": "Use report-specific reference range; preserve original unit."
+    },
+    {
+      "biomarker_id": "BM047",
+      "standard_name": "Alpha Fetoprotein",
+      "category": "Tumor Markers / Immunology",
+      "common_aliases": [
+        "AFP",
+        "Alpha Feto Protein",
+        "Alpha-Fetoprotein",
+        "Alpha Fetoprotein"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Protein produced mainly by the fetal liver; measured in adults as a tumor marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range; preserve original unit."
     }
   ]
 }

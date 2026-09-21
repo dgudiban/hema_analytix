@@ -43,8 +43,8 @@ def _by_id(parsed, biomarker_id):
 
 def test_spec_entries(spec):
     ids = [b["biomarker_id"] for b in spec]
-    assert len(spec) == 46
-    assert ids[0] == "BM001" and ids[-1] == "BM046"
+    assert len(spec) == 47
+    assert ids[0] == "BM001" and ids[-1] == "BM047"
     # No hard-coded reference-range keys anywhere in the spec entries.
     assert all("ref_low" not in b and "ref_high" not in b for b in spec)
     # No hard-coded reference-range keys anywhere in the spec entries.
@@ -138,6 +138,17 @@ def test_longest_alias_wins(spec):
 def test_no_partial_alias_match(spec):
     parsed = parse_service.parse_text("HbA1c 5.2 %", spec)
     assert [p["biomarker_id"] for p in parsed] == ["BM012"]
+
+
+def test_afp_alias_mapping(spec):
+    parsed = parse_service.parse_text(
+        "Alpha Feto Protein (AFP) 4.18 ng/mL Less Than 8.78", spec
+    )
+    assert len(parsed) == 1
+    assert parsed[0]["biomarker_id"] == "BM047"
+    assert parsed[0]["standard_name"] == "Alpha Fetoprotein"
+    assert parsed[0]["value"] == 4.18
+    assert parsed[0]["unit"] == "ng/mL"
 
 
 def test_no_subtype_merges(spec):
