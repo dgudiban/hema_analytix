@@ -356,3 +356,89 @@ def test_abnormal_flag_wins_over_transcribed_range():
     assert flag_status(90.0, 0.0, 100.0, "Normal") == "NORMAL"
     assert flag_status(90.0, 0.0, 100.0, None) == "NORMAL"
     assert flag_status(150.0, 0.0, 100.0, None) == "HIGH"
+
+
+def _vitd(value, ref_low, ref_high, unit="ng/mL", flag=None):
+    return {
+        "biomarker_id": "BM038",
+        "standard_name": "Vitamin D",
+        "original_name": "Vitamin D",
+        "value": value,
+        "unit": unit,
+        "ref_low": ref_low,
+        "ref_high": ref_high,
+        "flag": flag,
+    }
+
+
+def test_canonical_band_corrects_mispicked_vitamin_d_band():
+    # Live run: AI transcribed the Deficiency band (None-10) for Vitamin D
+    # 8.98 with no printed flag -> status NORMAL. The canonical sufficiency
+    # band (30-100) corrects it to LOW.
+    (out,) = analysis_service.analyze([_vitd(8.98, None, 10.0)])
+    assert out["ref_low"] == pytest.approx(30.0)
+    assert out["ref_high"] == pytest.approx(100.0)
+    assert out["status"] == "LOW"
+
+
+def test_canonical_band_corrects_insufficiency_band_pick():
+    # AI picked the Insufficiency band (10-30) for a sufficient value: the
+    # transcribed band would say HIGH (45 > 30); canonical says NORMAL.
+    (out,) = analysis_service.analyze([_vitd(45.0, 10.0, 30.0)])
+    assert out["status"] == "NORMAL"
+    assert out["ref_low"] == pytest.approx(30.0)
+
+
+def test_canonical_band_keeps_correctly_picked_band():
+    # Correctly transcribed sufficiency band is left untouched.
+    (out,) = analysis_service.analyze([_vitd(8.98, 30.0, 100.0)])
+    assert out["status"] == "LOW"
+    assert out["ref_low"] == pytest.approx(30.0)
+    assert out["ref_high"] == pytest.approx(100.0)
+
+
+def test_canonical_band_keeps_lab_specific_healthy_band():
+    # Overlapping band is plausibly the lab's own healthy band (30-80):
+    # not "clearly mis-picked", so the lab's bounds are respected.
+    (out,) = analysis_service.analyze([_vitd(90.0, 30.0, 80.0)])
+    assert out["status"] == "HIGH"
+    assert out["ref_high"] == pytest.approx(80.0)
+
+
+def test_canonical_band_skipped_when_flag_printed():
+    # A printed flag wins; the transcribed band is kept as-is.
+    (out,) = analysis_service.analyze([_vitd(8.98, None, 10.0, flag="Low")])
+    assert out["status"] == "LOW"
+    assert out["ref_high"] == pytest.approx(10.0)
+
+
+def test_canonical_band_skipped_on_unit_mismatch():
+    # nmol/L cutoffs differ from ng/mL: rule does not apply, transcribed
+    # band decides (documents the limitation rather than mis-correcting).
+    (out,) = analysis_service.analyze([_vitd(8.98, None, 10.0, unit="nmol/L")])
+    assert out["status"] == "NORMAL"
+    assert out["ref_high"] == pytest.approx(10.0)
+
+
+def test_canonical_band_ignores_other_biomarkers():
+    # Non-multi-band biomarkers are never touched, even with odd bands.
+    item = {
+        "biomarker_id": "BM011",
+        "standard_name": "Glucose",
+        "original_name": "Glucose",
+        "value": 5.0,
+        "unit": "mg/dL",
+        "ref_low": None,
+        "ref_high": 10.0,
+        "flag": None,
+    }
+    (out,) = analysis_service.analyze([item])
+    assert out["status"] == "NORMAL"
+    assert out["ref_high"] == pytest.approx(10.0)
+
+
+def test_canonical_band_no_range_stays_unknown():
+    # No transcribed range at all -> no band to correct, stays unknown
+    # (no invented fallback range).
+    (out,) = analysis_service.analyze([_vitd(8.98, None, None)])
+    assert out["status"] == "unknown"
