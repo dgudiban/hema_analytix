@@ -7,23 +7,12 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">🩸 BloodIQ</div>
-    <div class="topbar-right">
-      <div id="api-status" class="api-status" title="Backend connectivity">● connecting…</div>
-      <div id="user-chip" class="user-chip hidden">
-        <span id="user-name" class="user-name"></span>
-        <button id="logout-btn" class="link-btn" type="button">Logout</button>
-      </div>
-    </div>
-  </header>
-
   <!-- Shown until the patient logs in. -->
   <main id="auth-view" class="auth-view">
     <div class="auth-split">
       <div class="auth-brand">
         <div class="brand-lockup">
-          <div class="brand-tile">✚</div>
+          <div class="brand-tile">🩸</div>
           <div>
             <div class="brand-name">BloodIQ</div>
             <div class="brand-tag">INTELLIGENT LAB INSIGHTS</div>
@@ -74,15 +63,37 @@
     </div>
   </main>
 
-  <main class="container hidden" id="app-view">
-    <nav class="tabs" id="tabs" aria-label="Main">
-      <button type="button" class="tab active" data-tab="dashboard">Dashboard</button>
-      <button type="button" class="tab" data-tab="trends">Trends</button>
-      <button type="button" class="tab" data-tab="compare">Compare</button>
-      <button type="button" class="tab" data-tab="ask">Ask BloodIQ</button>
-      <button type="button" class="tab" data-tab="reports">Reports</button>
-      <button type="button" class="tab" data-tab="profile">Profile</button>
-    </nav>
+  <div class="app-shell hidden" id="app-view">
+    <aside class="sidebar">
+      <div class="side-brand">
+        <div class="side-logo">🩸</div>
+        <div>
+          <div class="side-name">BloodIQ</div>
+          <div class="side-tag">LAB INTELLIGENCE</div>
+        </div>
+      </div>
+      <nav class="side-nav" id="tabs" aria-label="Main">
+        <button type="button" class="side-link active" data-tab="dashboard"><span class="ico">📊</span><span class="lbl">Dashboard</span></button>
+        <button type="button" class="side-link" data-tab="results"><span class="ico">🧪</span><span class="lbl">Lab results</span></button>
+        <button type="button" class="side-link" data-tab="trends"><span class="ico">📈</span><span class="lbl">Trends &amp; analytics</span></button>
+        <button type="button" class="side-link" data-tab="compare"><span class="ico">⚖️</span><span class="lbl">Compare reports</span></button>
+        <button type="button" class="side-link" data-tab="ask"><span class="ico">💬</span><span class="lbl">Ask BloodIQ</span></button>
+        <button type="button" class="side-link" data-tab="upload"><span class="ico">📤</span><span class="lbl">Upload report</span></button>
+      </nav>
+      <p class="side-section">ACCOUNT</p>
+      <nav class="side-nav" aria-label="Account">
+        <button type="button" class="side-link" data-tab="profile"><span class="ico">👤</span><span class="lbl">Profile &amp; settings</span></button>
+        <button type="button" class="side-link" data-tab="reports"><span class="ico">🗂️</span><span class="lbl">My reports</span></button>
+      </nav>
+      <div class="side-foot">
+        <div id="api-status" class="api-status" title="Backend connectivity">● connecting…</div>
+        <div id="user-chip" class="hidden">
+          <span id="user-name" class="side-user"></span>
+          <button id="logout-btn" class="link-btn" type="button">Logout</button>
+        </div>
+      </div>
+    </aside>
+    <main class="app-main" id="app-main">
 
     <section class="card tab-panel" id="upload-card" data-panel="dashboard">
       <h2>Upload a blood report</h2>
@@ -178,7 +189,7 @@
       <ul id="dash-recent-list" class="history"></ul>
     </section>
 
-    <section class="card hidden tab-panel" id="results-card" data-panel="dashboard">
+    <section class="card hidden tab-panel" id="results-card" data-panel="results">
       <div class="results-head">
         <h2 id="report-title">Report</h2>
         <div class="btn-row">
@@ -282,7 +293,8 @@
       each lab report — always confirm with your report and consult a qualified
       healthcare professional.
     </footer>
-  </main>
+    </main>
+  </div>
 
   <script src="app.js"></script>
 </body>
