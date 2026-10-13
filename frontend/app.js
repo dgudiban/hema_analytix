@@ -311,20 +311,61 @@ function biomarkerRowHTML(r) {
     </div>`;
 }
 
+function setStat(key, n, total) {
+  $(`stat-${key}`).textContent = n;
+  $(`stat-bar-${key}`).style.width = total ? `${Math.round((n / total) * 100)}%` : "0%";
+}
+
+function renderSpotlight(results) {
+  const body = $("spotlight-body");
+  const spot = results.find((r) => r.status === "LOW")
+    || results.find((r) => r.status === "HIGH")
+    || results[0];
+  if (!spot) {
+    body.innerHTML = `<p class="muted">No biomarkers to spotlight.</p>`;
+    return;
+  }
+  const range = spot.ref_low != null || spot.ref_high != null
+    ? ` <span class="muted small">(${spot.ref_low ?? "–"} – ${spot.ref_high ?? "–"} ${escapeHtml(spot.unit || "")})</span>`
+    : "";
+  body.innerHTML = `
+    <div class="spotlight-row">
+      <div>
+        <p class="spotlight-name">${escapeHtml(spot.standard_name)}</p>
+        <p class="spotlight-value">${spot.value} ${escapeHtml(spot.unit || "")}${range}</p>
+      </div>
+      <span class="pill ${spot.status.toLowerCase()}">${spot.status}</span>
+    </div>`;
+}
+
 function renderQuickSummary(data) {
   const results = data.results || [];
   const below = results.filter((r) => r.status === "LOW");
   const above = results.filter((r) => r.status === "HIGH");
   const within = results.filter((r) => r.status === "NORMAL");
+  const total = results.length;
 
-  $("count-below").textContent = below.length;
-  $("count-within").textContent = within.length;
-  $("count-above").textContent = above.length;
+  setStat("within", within.length, total);
+  setStat("below", below.length, total);
+  setStat("above", above.length, total);
 
   const dateStr = data.report_date ? ` · ${data.report_date}` : "";
-  $("summary-meta").textContent = `${results.length} biomarker${results.length === 1 ? "" : "s"} detected${dateStr}`;
+  $("summary-meta").textContent = `${total} biomarker${total === 1 ? "" : "s"} detected${dateStr}`;
   $("summary-text").textContent = data.summary || "";
+  const srcBadge = $("latest-src");
+  if (data.extraction_source === "ai") {
+    srcBadge.textContent = "AI-extracted";
+    srcBadge.style.display = "";
+  } else if (data.extraction_source) {
+    srcBadge.textContent = "rule-parsed";
+    srcBadge.style.display = "";
+  } else {
+    srcBadge.style.display = "none";
+  }
+
   renderDonut(results);
+  $("dist-badge").textContent = `${total} result${total === 1 ? "" : "s"}`;
+  renderSpotlight(results);
 
   const notable = $("notable-list");
   notable.innerHTML = "";
@@ -339,7 +380,15 @@ function renderQuickSummary(data) {
       notable.appendChild(li);
     }
   }
-  $("summary-card").classList.remove("hidden");
+
+  dashboardHasData = true;
+  // Refresh dashboard visibility without scrolling.
+  document.querySelectorAll('.tab-panel[data-panel="dashboard"]').forEach((p) => {
+    let show = true;
+    if (p.dataset.requires === "data" && !dashboardHasData) show = false;
+    if (p.dataset.requires === "empty" && dashboardHasData) show = false;
+    p.classList.toggle("hidden", !show);
+  });
 }
 
 function renderResults(data) {
@@ -393,7 +442,7 @@ function renderResults(data) {
     });
   });
 
-  $("summary-card").scrollIntoView({ behavior: "smooth" });
+  $("latest-card").scrollIntoView({ behavior: "smooth" });
 }
 
 function escapeHtml(s) {
@@ -544,16 +593,20 @@ async function stepReport(dir) {
 
 async function loadHistory() {
   const list = $("history-list");
+  const dashList = $("dash-recent-list");
   try {
     const res = await api(`/api/reports`);
     const reports = await res.json();
     list.innerHTML = "";
+    dashList.innerHTML = "";
+    $("stat-reports").textContent = reports.length;
     if (reports.length === 0) {
       list.innerHTML = `<li class="muted">No reports yet.</li>`;
+      dashList.innerHTML = `<li class="muted">No reports yet.</li>`;
       return;
     }
     reportIds = reports.map((r) => r.id);
-    for (const [idx, r] of reports.entries()) {
+    const addRow = (r, idx, target) => {
       const li = document.createElement("li");
       const link = document.createElement("a");
       link.href = "#";
@@ -575,8 +628,10 @@ async function loadHistory() {
         }
       });
       li.appendChild(link);
-      list.appendChild(li);
-    }
+      target.appendChild(li);
+    };
+    for (const [idx, r] of reports.entries()) addRow(r, idx, list);
+    for (const [idx, r] of reports.slice(0, 5).entries()) addRow(r, idx, dashList);
   } catch {
     list.innerHTML = `<li class="muted">Could not load history.</li>`;
   }
@@ -1141,12 +1196,16 @@ $("chat-form").addEventListener("submit", handleChat);
 
 /* ---- Tabs, profile, navigation wiring ---- */
 
+let dashboardHasData = false;
+
 function switchTab(name) {
   document.querySelectorAll("#tabs .tab").forEach((t) =>
     t.classList.toggle("active", t.dataset.tab === name)
   );
   document.querySelectorAll(".tab-panel").forEach((p) => {
-    const show = p.dataset.panel === name;
+    let show = p.dataset.panel === name;
+    if (show && p.dataset.requires === "data" && !dashboardHasData) show = false;
+    if (show && p.dataset.requires === "empty" && dashboardHasData) show = false;
     p.classList.toggle("hidden", !show);
   });
   $("app-view").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1167,6 +1226,12 @@ $("view-results-btn").addEventListener("click", () =>
   switchTab("dashboard"));
 $("ask-about-btn").addEventListener("click", () =>
   switchTab("ask"));
+$("browse-history-btn").addEventListener("click", () =>
+  switchTab("reports"));
+$("view-all-reports-btn").addEventListener("click", () =>
+  switchTab("reports"));
+$("all-results-btn").addEventListener("click", () =>
+  $("results-card").scrollIntoView({ behavior: "smooth", block: "start" }));
 $("prev-report-btn").addEventListener("click", () => stepReport(1));
 $("next-report-btn").addEventListener("click", () => stepReport(-1));
 $("profile-logout-btn").addEventListener("click", logout);

@@ -98,23 +98,84 @@
       <div id="upload-note" class="note hidden"></div>
     </section>
 
-    <section class="card hidden tab-panel" id="summary-card" data-panel="dashboard">
-      <h2>Report analyzed ✓</h2>
-      <p class="muted" id="summary-meta"></p>
-      <div class="summary-top">
-        <div class="count-row">
-          <div class="count-box below"><span id="count-below">0</span><label>Below range</label></div>
-          <div class="count-box within"><span id="count-within">0</span><label>Within range</label></div>
-          <div class="count-box above"><span id="count-above">0</span><label>Above range</label></div>
+    <section class="card tab-panel" data-panel="dashboard" data-requires="empty" id="dash-empty">
+      <h2>Your dashboard</h2>
+      <p class="muted">Upload your first blood report above — you'll see your range overview, result distribution, and a biomarker spotlight here.</p>
+    </section>
+
+    <section class="card tab-panel hidden" data-panel="dashboard" data-requires="data" id="stats-card">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <p class="stat-label">WITHIN RANGE</p>
+          <p class="stat-num within" id="stat-within">0</p>
+          <p class="stat-sub">Results in lab interval</p>
+          <div class="stat-bar"><div id="stat-bar-within" class="within"></div></div>
         </div>
-        <div class="donut-wrap" id="donut-wrap"></div>
+        <div class="stat-card">
+          <p class="stat-label">BELOW RANGE</p>
+          <p class="stat-num below" id="stat-below">0</p>
+          <p class="stat-sub">Below lab interval</p>
+          <div class="stat-bar"><div id="stat-bar-below" class="below"></div></div>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">ABOVE RANGE</p>
+          <p class="stat-num above" id="stat-above">0</p>
+          <p class="stat-sub">Above lab interval</p>
+          <div class="stat-bar"><div id="stat-bar-above" class="above"></div></div>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">REPORTS SAVED</p>
+          <p class="stat-num reports" id="stat-reports">0</p>
+          <p class="stat-sub">In your history</p>
+          <button type="button" class="link-btn" id="browse-history-btn">Browse history →</button>
+        </div>
       </div>
+    </section>
+
+    <section class="card tab-panel hidden" data-panel="dashboard" data-requires="data" id="latest-card">
+      <div class="results-head">
+        <h2>Latest report ✓</h2>
+        <span class="src-badge" id="latest-src"></span>
+      </div>
+      <p class="muted" id="summary-meta"></p>
       <p id="summary-text" class="summary"></p>
+      <h3 class="subhead">Important changes</h3>
       <ul id="notable-list" class="notable"></ul>
       <div class="btn-row">
         <button id="view-results-btn" type="button">View detailed results</button>
         <button id="ask-about-btn" type="button" class="secondary">Ask BloodIQ</button>
       </div>
+    </section>
+
+    <section class="card tab-panel hidden" data-panel="dashboard" data-requires="data" id="dist-card">
+      <div class="results-head">
+        <div>
+          <h2>Reference range distribution</h2>
+          <p class="muted">Share of measured biomarkers in latest report</p>
+        </div>
+        <span class="count-badge" id="dist-badge"></span>
+      </div>
+      <div class="donut-wrap" id="donut-wrap"></div>
+      <p class="muted small footnote">Classification uses the reference intervals printed on this report. The distribution describes reported values, not overall health.</p>
+    </section>
+
+    <section class="card tab-panel hidden" data-panel="dashboard" data-requires="data" id="spotlight-card">
+      <div class="results-head">
+        <div>
+          <h2>Biomarker spotlight</h2>
+          <p class="muted">A closer look at individual results</p>
+        </div>
+        <button type="button" class="link-btn" id="all-results-btn">All results →</button>
+      </div>
+      <div id="spotlight-body"></div>
+    </section>
+
+    <section class="card tab-panel hidden" data-panel="dashboard" data-requires="data" id="dash-recent-card">
+      <div class="results-head">
+        <h2>Recent reports</h2>
+        <button type="button" class="link-btn" id="view-all-reports-btn">View all →</button>
+      </div>
+      <ul id="dash-recent-list" class="history"></ul>
     </section>
 
     <section class="card hidden tab-panel" id="results-card" data-panel="dashboard">

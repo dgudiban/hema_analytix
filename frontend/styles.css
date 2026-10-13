@@ -402,17 +402,42 @@ button:hover { filter: brightness(0.96); }
   .auth-view { align-items: flex-start; }
 }
 
-/* ---- Quick summary ---- */
-.count-row { display: flex; gap: 0.75rem; margin: 1rem 0; }
-.count-box {
-  flex: 1; text-align: center; padding: 0.9rem 0.5rem;
-  border-radius: 8px; background: #edf3f7; border: 1px solid #d9e6ee;
+/* ---- Dashboard: stat cards, distribution, spotlight ---- */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem; }
+.stat-card {
+  background: var(--bg-soft); border: 1px solid var(--border); border-radius: 12px;
+  padding: 1rem 1.1rem;
 }
-.count-box span { display: block; font-size: 1.6rem; font-weight: 700; }
-.count-box label { font-size: 0.8rem; color: var(--muted); }
-.count-box.below span { color: #e11d48; }
-.count-box.within span { color: var(--green); }
-.count-box.above span { color: var(--amber); }
+.stat-label { font-size: 0.68rem; letter-spacing: 0.1em; font-weight: 700; color: var(--muted); margin: 0 0 0.35rem; }
+.stat-num { font-size: 1.9rem; font-weight: 800; margin: 0; line-height: 1.1; }
+.stat-num.within { color: var(--green); }
+.stat-num.below { color: #e11d48; }
+.stat-num.above { color: var(--amber); }
+.stat-num.reports { color: var(--accent); }
+.stat-sub { font-size: 0.8rem; color: var(--muted); margin: 0.25rem 0 0.6rem; }
+.stat-bar { height: 6px; border-radius: 4px; background: #e2ebf1; overflow: hidden; }
+.stat-bar > div { height: 100%; border-radius: 4px; width: 0; transition: width 0.6s ease; }
+.stat-bar > div.within { background: var(--green); }
+.stat-bar > div.below { background: #e11d48; }
+.stat-bar > div.above { background: var(--amber); }
+.stat-card .link-btn { margin-top: 0.55rem; font-weight: 600; }
+.subhead { font-size: 1rem; margin: 1.1rem 0 0.4rem; }
+.count-badge {
+  flex: none; font-size: 0.75rem; font-weight: 700; color: var(--muted);
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 999px; padding: 0.25rem 0.75rem;
+}
+.footnote { margin-top: 0.9rem; }
+.spotlight-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  background: var(--bg-soft); border: 1px solid var(--border); border-radius: 12px;
+  padding: 1rem 1.2rem;
+}
+.spotlight-name { font-weight: 700; font-size: 1.05rem; margin: 0 0 0.2rem; }
+.spotlight-value { font-size: 0.95rem; color: var(--muted); margin: 0; }
+@media (max-width: 860px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---- Quick summary ---- */
 .notable { margin: 0.5rem 0 1rem; padding-left: 1.2rem; }
 .notable li { margin: 0.25rem 0; }
 .btn-row { display: flex; gap: 0.75rem; margin-top: 1rem; }
@@ -453,8 +478,7 @@ button:hover { filter: brightness(0.96); }
 
 /* ---- Phase 4: donut + range indicators ---- */
 .summary-top { display: flex; gap: 1.5rem; align-items: center; margin: 1rem 0; flex-wrap: wrap; }
-.summary-top .count-row { margin: 0; flex: 1; min-width: 220px; }
-.donut-wrap { display: flex; gap: 1rem; align-items: center; }
+.donut-wrap { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; }
 .donut { position: relative; width: 110px; height: 110px; flex: none; }
 .donut-svg { width: 100%; height: 100%; transform: rotate(0deg); }
 .donut-center {
