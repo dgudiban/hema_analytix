@@ -453,3 +453,25 @@ def test_canonical_band_no_range_stays_unknown():
     # (no invented fallback range).
     (out,) = analysis_service.analyze([_vitd(8.98, None, None)])
     assert out["status"] == "unknown"
+
+
+def test_estimated_avg_glucose_never_merges_into_glucose(spec):
+    # "Estimated Ave Glucose" (eAG, derived from HbA1c) is a different
+    # analyte from blood glucose: the AI-path name matcher must refuse it.
+    assert parse_service.match_biomarker("Estimated Ave Glucose", spec) is None
+    assert parse_service.match_biomarker("Estimated Average Glucose", spec) is None
+    assert parse_service.match_biomarker("eAG", spec) is None
+    # Plain glucose still maps.
+    bm = parse_service.match_biomarker("Glucose", spec)
+    assert bm is not None and bm["biomarker_id"] == "BM011"
+
+
+def test_rule_parser_skips_estimated_glucose_for_cmp_glucose(spec):
+    # eAG printed before the real Glucose line: the guarded alias must skip
+    # it and take the CMP Glucose value + range instead.
+    text = "Estimated Ave Glucose 108 mg/dL\nGlucose 92 70 - 99 mg/dL"
+    parsed = parse_service.parse_text(text, spec)
+    (g,) = [p for p in parsed if p["biomarker_id"] == "BM011"]
+    assert g["value"] == 92.0
+    assert g["ref_low"] == 70.0 and g["ref_high"] == 99.0
+    assert g["original_name"] == "Glucose"

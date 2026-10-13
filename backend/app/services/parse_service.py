@@ -66,6 +66,7 @@ _BARE_RANGE = re.compile(
 # _alias_pattern already block forms like "hs-CRP" -> "CRP" or "RDW-SD" -> "RDW".)
 _SUBTYPE_GUARDS = {
     "BM009": {"sd"},                                        # "RDW SD"
+    "BM011": {"ave", "average", "estimated"},                # "Estimated Ave Glucose" (eAG) is not blood glucose
     "BM019": {"ionized"},                                   # ionized calcium
     "BM038": {"1,25", "1,25-dihydroxy", "1,25-(oh)2"},      # other D metabolites
     "BM040": {"rbc", "red cell", "erythrocyte"},            # RBC folate
@@ -300,6 +301,9 @@ def match_biomarker(name: str, spec: list[dict]) -> dict | None:
     _SUBTYPE_QUALIFIERS = {
         "ionized", "ionised", "corrected", "free", "rbc", "serum", "urine",
         "hs", "ultra", "a1c", "direct", "indirect", "ratio",
+        # "Estimated Ave/ Average Glucose" (eAG, derived from HbA1c) is a
+        # different analyte from blood glucose — never merge it into Glucose.
+        "estimated", "ave", "average", "eag",
     }
 
     def _norm(s: str) -> str:
