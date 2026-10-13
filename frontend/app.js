@@ -338,8 +338,7 @@ function renderQuickSummary(data) {
     }
   }
 
-  const user = currentUser();
-  const first = user && user.name ? user.name.split(" ")[0] : "";
+  const first = currentUser && currentUser.name ? currentUser.name.split(" ")[0] : "";
   $("dash-greeting-data").textContent = first ? `Welcome back, ${first}` : "Welcome back";
 
   dashboardHasData = true;
@@ -355,6 +354,60 @@ function refreshDashboardPanels() {
   });
   $("dash-content").classList.toggle("hidden", !dashboardHasData);
 }
+
+function renderResults(data) {
+  renderQuickSummary(data);
+
+  $("results-card").classList.remove("hidden");
+  const detail = data.extraction_detail || {};
+  const failed = detail.failed_chunks || 0;
+  const failNote = failed
+    ? ` ${failed}/${detail.chunks || "?"} chunk(s) fell back to rule parsing (${(detail.fail_reasons || []).join(", ")}).`
+    : "";
+  const srcBadge =
+    data.extraction_source === "ai"
+      ? ` <span class="src-badge" title="Values transcribed by AI from the report's printed text; statuses computed deterministically.${failNote}">AI-extracted${failed ? "*" : ""}</span>`
+      : ` <span class="src-badge" title="Values matched by the rule-based parser.${failNote}">rule-parsed</span>`;
+  $("report-title").innerHTML = `Report #${data.report_id}${srcBadge}`;
+  lastReportId = data.report_id;
+  lastAiExplanation = data.ai_explanation;
+  $("ai-panel").classList.add("hidden");
+
+  const groupsEl = $("results-groups");
+  groupsEl.innerHTML = "";
+  const results = data.results || [];
+  for (const g of GROUPS) {
+    const members = results.filter((r) => g.match(r.status));
+    if (members.length === 0) continue;
+    const section = document.createElement("section");
+    section.className = `result-group ${g.key}`;
+    section.innerHTML = `
+      <h3 class="group-head">${g.icon} ${g.title} <span class="group-count">${members.length}</span></h3>
+      <div class="group-body"></div>`;
+    const body = section.querySelector(".group-body");
+    for (const r of members) {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = biomarkerRowHTML(r);
+      body.appendChild(wrap.firstElementChild);
+    }
+    groupsEl.appendChild(section);
+  }
+  if (results.length === 0) {
+    groupsEl.innerHTML = `<p class="muted">No biomarkers found in this report's text.</p>`;
+  }
+
+  // Expandable rows.
+  groupsEl.querySelectorAll(".bio-row-head").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const detailEl = btn.nextElementSibling;
+      const open = detailEl.classList.toggle("hidden");
+      btn.setAttribute("aria-expanded", String(!open));
+      btn.querySelector(".chev").textContent = open ? "▸" : "▾";
+    });
+  });
+
+}
+
 
 
 function escapeHtml(s) {
@@ -1201,7 +1254,7 @@ function switchTab(name) {
 }
 
 function loadProfile() {
-  const user = currentUser();
+  const user = currentUser;
   if (!user) return;
   $("profile-name").textContent = user.name || "";
   $("profile-email").textContent = user.email || "";
