@@ -803,18 +803,107 @@ $("trend-chart").addEventListener("click", (e) => {
 
 const chatHistory = [];
 
+const CHAT_MODE_DESC = {
+  hybrid: "Answers use your reports plus curated knowledge — numbers come from your results.",
+  baseline: "General answers from the AI alone, without your report data (for comparison).",
+};
+
 function chatMode() {
-  const el = document.querySelector('input[name="chat-mode"]:checked');
-  return el ? el.value : "hybrid";
+  const el = document.querySelector('.chat-mode [data-mode].active');
+  return el ? el.dataset.mode : "hybrid";
 }
 
-function addChatBubble(role, text) {
+function updateModeDesc() {
+  $("chat-mode-desc").textContent = CHAT_MODE_DESC[chatMode()] || "";
+}
+
+document.querySelectorAll(".chat-mode [data-mode]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".chat-mode [data-mode]").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    updateModeDesc();
+  });
+});
+updateModeDesc();
+
+function chatTimestamp() {
+  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+/* Tiny safe markdown renderer: escape HTML, then bold, lists, line breaks. */
+function renderMarkdown(text) {
+  const esc = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  const inline = (s) =>
+    s
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|\W)\*([^*\n]+)\*/g, "$1<em>$2</em>");
+  const lines = esc.split("\n");
+  let html = "";
+  let listOpen = null; // "ul" | "ol" | null
+  const closeList = () => {
+    if (listOpen) { html += `</${listOpen}>`; listOpen = null; }
+  };
+  for (const line of lines) {
+    const t = line.trim();
+    let m;
+    if ((m = t.match(/^[-*]\s+(.*)/))) {
+      if (listOpen !== "ul") { closeList(); html += "<ul>"; listOpen = "ul"; }
+      html += `<li>${inline(m[1])}</li>`;
+    } else if ((m = t.match(/^\d+[.)]\s+(.*)/))) {
+      if (listOpen !== "ol") { closeList(); html += "<ol>"; listOpen = "ol"; }
+      html += `<li>${inline(m[1])}</li>`;
+    } else if ((m = t.match(/^#{1,3}\s+(.*)/))) {
+      closeList();
+      html += `<p class="md-head">${inline(m[1])}</p>`;
+    } else if (t === "") {
+      closeList();
+    } else {
+      closeList();
+      html += `${inline(t)}<br />`;
+    }
+  }
+  closeList();
+  return html;
+}
+
+function hideWelcome() {
+  const w = $("chat-welcome");
+  if (w) w.hidden = true;
+}
+
+function addChatBubble(role, text, opts = {}) {
+  hideWelcome();
   const log = $("chat-log");
+  const msg = document.createElement("div");
+  msg.className = `chat-msg ${role}`;
+
+  const avatar = document.createElement("div");
+  avatar.className = "chat-avatar";
+  avatar.textContent = role === "user" ? "👤" : "🩸";
+  msg.appendChild(avatar);
+
+  const body = document.createElement("div");
+  body.className = "chat-body";
+
   const div = document.createElement("div");
   div.className = `chat-bubble ${role}`;
-  const span = document.createElement("span");
-  span.textContent = text;
-  div.appendChild(span);
+  if (role === "assistant") {
+    div.innerHTML = renderMarkdown(text);
+  } else {
+    div.textContent = text;
+  }
+  body.appendChild(div);
+
+  const meta = document.createElement("div");
+  meta.className = "chat-meta-row";
+  const time = document.createElement("span");
+  time.className = "chat-time";
+  time.textContent = chatTimestamp();
+  meta.appendChild(time);
+
   if (role === "assistant" && text) {
     const speak = document.createElement("button");
     speak.type = "button";
@@ -823,26 +912,61 @@ function addChatBubble(role, text) {
     speak.setAttribute("aria-label", "Listen to this answer");
     speak.textContent = "🔊";
     speak.addEventListener("click", () => toggleSpeak(text, speak));
-    div.appendChild(speak);
+    meta.appendChild(speak);
   }
-  log.appendChild(div);
+  if (opts.sources && opts.sources.length) {
+    const wrap = document.createElement("span");
+    wrap.className = "chat-sources";
+    for (const s of opts.sources.slice(0, 4)) {
+      const chip = document.createElement("span");
+      chip.className = "src-chip";
+      chip.textContent = s;
+      chip.title = s;
+      wrap.appendChild(chip);
+    }
+    meta.appendChild(wrap);
+  }
+  if (opts.grounded === false) {
+    const warn = document.createElement("span");
+    warn.className = "chat-warn";
+    warn.textContent = "⚠ some numbers not found in your reports";
+    meta.appendChild(warn);
+  }
+  body.appendChild(meta);
+  msg.appendChild(body);
+  log.appendChild(msg);
   log.scrollTop = log.scrollHeight;
 }
 
-async function handleChat(e) {
-  e.preventDefault();
-  const input = $("chat-input");
-  const message = input.value.trim();
+function addThinking() {
+  hideWelcome();
+  const log = $("chat-log");
+  const msg = document.createElement("div");
+  msg.className = "chat-msg assistant";
+  const avatar = document.createElement("div");
+  avatar.className = "chat-avatar";
+  avatar.textContent = "🩸";
+  msg.appendChild(avatar);
+  const body = document.createElement("div");
+  body.className = "chat-body";
+  const div = document.createElement("div");
+  div.className = "chat-bubble assistant thinking";
+  div.innerHTML = '<span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>';
+  body.appendChild(div);
+  msg.appendChild(body);
+  log.appendChild(msg);
+  log.scrollTop = log.scrollHeight;
+  return msg;
+}
+
+async function sendChatMessage(message) {
+  message = (message || "").trim();
   if (!message) return;
-  input.value = "";
   addChatBubble("user", message);
   chatHistory.push({ role: "user", content: message });
 
   const mode = chatMode();
-  const thinking = document.createElement("div");
-  thinking.className = "chat-bubble assistant thinking";
-  thinking.textContent = "Thinking…";
-  $("chat-log").appendChild(thinking);
+  const thinking = addThinking();
 
   try {
     const url = mode === "baseline" ? `${API}/api/chat/baseline` : `${API}/api/chat`;
@@ -857,19 +981,61 @@ async function handleChat(e) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     thinking.remove();
-    addChatBubble("assistant", data.answer);
+    const sources = (data.sources || []).map((s) => s.title).filter(Boolean);
+    addChatBubble("assistant", data.answer, { sources, grounded: data.numbers_grounded });
     chatHistory.push({ role: "assistant", content: data.answer });
-    const srcs = (data.sources || []).map((s) => s.title).join(", ");
     $("chat-meta").textContent =
-      `mode: ${data.mode}` +
-      (data.model ? ` · model: ${data.model}` : " · model: unavailable") +
-      (srcs ? ` · sources: ${srcs}` : "") +
-      (data.numbers_grounded === false ? " · ⚠ some numbers not found in context" : "");
+      (data.model ? `model: ${data.model}` : "model: unavailable") +
+      (mode === "hybrid" ? " · grounded in your reports" : " · AI only");
   } catch (err) {
     thinking.remove();
-    addChatBubble("assistant", `Sorry — could not get an answer (${err.message}).`);
+    addChatBubble("assistant", `Sorry — I couldn't get an answer (${err.message}). Please try again.`);
   }
 }
+
+function handleChat(e) {
+  e.preventDefault();
+  const input = $("chat-input");
+  const message = input.value;
+  input.value = "";
+  autogrow(input);
+  sendChatMessage(message);
+  input.focus();
+}
+
+function clearChat() {
+  chatHistory.length = 0;
+  stopSpeaking();
+  const log = $("chat-log");
+  log.querySelectorAll(".chat-msg").forEach((m) => m.remove());
+  const w = $("chat-welcome");
+  if (w) w.hidden = false;
+  $("chat-meta").textContent = "";
+  log.scrollTop = 0;
+}
+
+$("chat-clear").addEventListener("click", clearChat);
+
+document.querySelectorAll(".chat-suggest button").forEach((btn) => {
+  btn.addEventListener("click", () => sendChatMessage(btn.textContent));
+});
+
+/* Textarea: autogrow + Enter to send, Shift+Enter for newline. */
+function autogrow(input) {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 140) + "px";
+}
+
+(function initChatInput() {
+  const input = $("chat-input");
+  input.addEventListener("input", () => autogrow(input));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleChat(e);
+    }
+  });
+})();
 
 /* ---- Voice input/output (zero-cost Web Speech API) ---- */
 

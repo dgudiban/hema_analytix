@@ -151,17 +151,33 @@
     </section>
 
     <section class="card tab-panel" id="chat-card" data-panel="ask">
-      <h2>Ask about your results</h2>
-      <p class="muted">Grounded answers use your reports plus curated knowledge. Baseline answers come from the AI alone, for comparison.</p>
-      <div class="chat-mode">
-        <label><input type="radio" name="chat-mode" value="hybrid" checked /> Hybrid (grounded)</label>
-        <label><input type="radio" name="chat-mode" value="baseline" /> Baseline (AI only)</label>
+      <div class="chat-head">
+        <div>
+          <h2>Ask BloodIQ</h2>
+          <p class="muted">Ask anything about your blood reports in plain language.</p>
+        </div>
+        <button id="chat-clear" type="button" class="secondary small-btn" title="Clear this conversation">Clear</button>
       </div>
-      <div id="chat-log" class="chat-log" aria-live="polite"></div>
+      <div class="chat-mode segmented" role="group" aria-label="Answer mode">
+        <button type="button" data-mode="hybrid" class="active">📊 My reports</button>
+        <button type="button" data-mode="baseline">🤖 AI only</button>
+      </div>
+      <p id="chat-mode-desc" class="muted small"></p>
+      <div id="chat-log" class="chat-log" aria-live="polite">
+        <div id="chat-welcome" class="chat-welcome">
+          <div class="chat-welcome-avatar">🩸</div>
+          <p><strong>Hi, I'm BloodIQ.</strong><br />Ask me about any of your results — what a test means, why a value is flagged, or how it changed over time.</p>
+          <div class="chat-suggest">
+            <button type="button">Why is my hemoglobin low?</button>
+            <button type="button">Explain my cholesterol results</button>
+            <button type="button">What does HbA1c measure?</button>
+          </div>
+        </div>
+      </div>
       <form id="chat-form" class="chat-form">
-        <input type="text" id="chat-input" placeholder="e.g. Why is my hemoglobin low?" autocomplete="off" />
+        <textarea id="chat-input" rows="1" placeholder="Ask about your results…  (Enter to send, Shift+Enter for a new line)" autocomplete="off"></textarea>
         <button type="button" id="chat-mic" class="icon-btn" title="Ask with your voice">🎤</button>
-        <button type="submit" id="chat-send">Ask</button>
+        <button type="submit" id="chat-send" title="Send">➤</button>
       </form>
       <p id="voice-note" class="muted small" hidden></p>
       <p id="chat-meta" class="muted small"></p>
