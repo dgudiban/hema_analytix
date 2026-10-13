@@ -19,27 +19,59 @@
   </header>
 
   <!-- Shown until the patient logs in. -->
-  <main class="container" id="auth-view">
-    <section class="card auth-card">
-      <h2>🩸 BloodIQ</h2>
-      <p class="muted">Your blood reports, tracked over time — private to your account.</p>
-      <div class="auth-tabs">
-        <button type="button" id="tab-login" class="auth-tab active">Log in</button>
-        <button type="button" id="tab-signup" class="auth-tab">Sign up</button>
+  <main id="auth-view" class="auth-view">
+    <div class="auth-split">
+      <div class="auth-brand">
+        <div class="brand-lockup">
+          <div class="brand-tile">✚</div>
+          <div>
+            <div class="brand-name">BloodIQ</div>
+            <div class="brand-tag">INTELLIGENT LAB INSIGHTS</div>
+          </div>
+        </div>
+        <h1>Your lab results,<br /><span class="teal">made easier to understand.</span></h1>
+        <p class="muted">Explore blood reports, follow biomarker trends, compare results over time, and prepare thoughtful questions for your healthcare team.</p>
+        <ul class="brand-checks">
+          <li>Clear reference ranges</li>
+          <li>Patient history and comparisons</li>
+          <li>Patient-friendly AI explanations</li>
+        </ul>
       </div>
-      <form id="login-form" class="auth-form">
-        <input type="email" id="login-email" placeholder="Email" required autocomplete="email" />
-        <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password" />
-        <button type="submit" id="login-btn">Log in</button>
-      </form>
-      <form id="signup-form" class="auth-form hidden">
-        <input type="text" id="signup-name" placeholder="Full name" required autocomplete="name" />
-        <input type="email" id="signup-email" placeholder="Email" required autocomplete="email" />
-        <input type="password" id="signup-password" placeholder="Password (min 8 characters)" required minlength="8" autocomplete="new-password" />
-        <button type="submit" id="signup-btn">Create account</button>
-      </form>
-      <p id="auth-error" class="auth-error hidden"></p>
-    </section>
+      <div class="auth-portal">
+        <section class="card portal-card">
+          <p class="portal-kicker">PATIENT PORTAL</p>
+          <h2>Welcome to BloodIQ</h2>
+          <p class="muted">Sign in to your secure patient account.</p>
+          <div class="auth-tabs">
+            <button type="button" id="tab-login" class="auth-tab active">Log in</button>
+            <button type="button" id="tab-signup" class="auth-tab">Sign up</button>
+          </div>
+          <form id="login-form" class="auth-form">
+            <label>Email address
+              <input type="email" id="login-email" placeholder="you@example.com" required autocomplete="email" />
+            </label>
+            <label>Password
+              <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password" />
+            </label>
+            <button type="submit" id="login-btn">Continue →</button>
+          </form>
+          <form id="signup-form" class="auth-form hidden">
+            <label>Full name
+              <input type="text" id="signup-name" placeholder="Your name" required autocomplete="name" />
+            </label>
+            <label>Email address
+              <input type="email" id="signup-email" placeholder="you@example.com" required autocomplete="email" />
+            </label>
+            <label>Password
+              <input type="password" id="signup-password" placeholder="Min 8 characters" required minlength="8" autocomplete="new-password" />
+            </label>
+            <button type="submit" id="signup-btn">Create account →</button>
+          </form>
+          <p id="auth-error" class="auth-error hidden"></p>
+          <p class="muted small portal-note">Your reports and chat stay private to this account.</p>
+        </section>
+      </div>
+    </div>
   </main>
 
   <main class="container hidden" id="app-view">

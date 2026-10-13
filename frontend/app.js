@@ -152,7 +152,7 @@ const GROUPS = [
   { key: "unknown", icon: "⚪", title: "No reference range on report", match: (s) => s !== "LOW" && s !== "HIGH" && s !== "NORMAL" },
 ];
 
-const BAR_COLORS = { low: "#60a5fa", normal: "#34d399", high: "#fbbf24" };
+const BAR_COLORS = { low: "#e11d48", normal: "#16a34a", high: "#d97706" };
 
 /* Largest-remainder percentages that always sum to exactly 100. */
 function pct100(counts) {
@@ -173,7 +173,7 @@ function donutHTML(results) {
     { key: "below", label: "Below range", color: BAR_COLORS.low, n: 0 },
     { key: "within", label: "Within range", color: BAR_COLORS.normal, n: 0 },
     { key: "above", label: "Above range", color: BAR_COLORS.high, n: 0 },
-    { key: "norange", label: "No range printed", color: "#64748b", n: 0 },
+    { key: "norange", label: "No range printed", color: "#9db4c2", n: 0 },
   ];
   for (const r of results) {
     if (r.status === "LOW") segs[0].n++;
@@ -202,7 +202,7 @@ function donutHTML(results) {
   return `
     <div class="donut" role="img" aria-label="Result distribution: ${segs.map((s, i) => `${s.label} ${pcts[i]} percent`).join(", ")}">
       <svg viewBox="0 0 36 36" class="donut-svg">
-        <circle r="15.9155" cx="18" cy="18" fill="none" stroke="#1e293b" stroke-width="6" />
+        <circle r="15.9155" cx="18" cy="18" fill="none" stroke="#e6eef4" stroke-width="6" />
         ${circles}
       </svg>
       <div class="donut-center"><strong>${total}</strong><span>${total === 1 ? "marker" : "markers"}</span></div>
@@ -717,7 +717,7 @@ function drawTrend(trend) {
   const pts = trend.points;
   if (pts.length === 0) return;
 
-  const STATUS_FILL = { LOW: "#60a5fa", NORMAL: "#34d399", HIGH: "#fbbf24" };
+  const STATUS_FILL = { LOW: "#e11d48", NORMAL: "#16a34a", HIGH: "#d97706" };
   const vals = pts.map((p) => p.value);
   let min = Math.min(...vals), max = Math.max(...vals);
   const latest = pts[pts.length - 1];
@@ -738,20 +738,20 @@ function drawTrend(trend) {
   if (bandLo != null && bandHi != null && bandHi > bandLo) {
     ctx.fillStyle = "rgba(52, 211, 153, 0.12)";
     ctx.fillRect(padL, ys(bandHi), W - padL - padR, ys(bandLo) - ys(bandHi));
-    ctx.strokeStyle = "rgba(52, 211, 153, 0.45)";
+    ctx.strokeStyle = "rgba(13, 148, 136, 0.45)";
     ctx.setLineDash([5, 4]);
     ctx.beginPath(); ctx.moveTo(padL, ys(bandHi)); ctx.lineTo(W - padR, ys(bandHi)); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(padL, ys(bandLo)); ctx.lineTo(W - padR, ys(bandLo)); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = "#34d399";
+    ctx.fillStyle = "#0d9488";
     ctx.font = "10px system-ui";
     ctx.fillText(`ref on latest report: ${bandLo}–${bandHi}`, padL + 4, ys(bandHi) - 5);
   }
 
   // Gridlines + y labels.
   ctx.font = "11px system-ui";
-  ctx.fillStyle = "#94a3b8";
-  ctx.strokeStyle = "#243145";
+  ctx.fillStyle = "#5f7d90";
+  ctx.strokeStyle = "#d9e6ee";
   ctx.lineWidth = 1;
   for (let g = 0; g <= 4; g++) {
     const v = min + ((max - min) * g) / 4;
@@ -766,11 +766,11 @@ function drawTrend(trend) {
     const x = xs(i) - barW / 2;
     const yTop = ys(p.value);
     const yBase = ys(Math.max(min, 0));
-    ctx.fillStyle = STATUS_FILL[p.status] || "#64748b";
+    ctx.fillStyle = STATUS_FILL[p.status] || "#9db4c2";
     ctx.fillRect(x, yTop, barW, Math.max(2, yBase - yTop));
-    ctx.fillStyle = "#e2e8f0";
+    ctx.fillStyle = "#10303f";
     ctx.fillText(String(p.value), x, yTop - 6);
-    ctx.fillStyle = "#94a3b8";
+    ctx.fillStyle = "#5f7d90";
     const label = (p.report_date || "").slice(5) || "?";
     ctx.fillText(label, xs(i) - 14, H - 26);
     const rng = p.ref_low != null && p.ref_high != null ? `${p.ref_low}–${p.ref_high}`
@@ -778,7 +778,7 @@ function drawTrend(trend) {
     ctx.fillText(rng, xs(i) - 20, H - 10);
   });
 
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = "#5f7d90";
   ctx.fillText(trend.unit || "", W - padR - 30, padT + 4);
 }
 
