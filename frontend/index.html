@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BloodIQ — Blood Report Analytics</title>
+  <title>BloodIQ — Lab Intelligence</title>
+  <link rel="icon" type="image/png" href="logo.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -12,25 +13,25 @@
     <div class="auth-split">
       <div class="auth-brand">
         <div class="brand-lockup">
-          <div class="brand-tile">🩸</div>
+          <img src="logo.png" alt="BloodIQ logo" class="brand-logo" />
           <div>
-            <div class="brand-name">BloodIQ</div>
-            <div class="brand-tag">INTELLIGENT LAB INSIGHTS</div>
+            <div class="brand-name">Blood<span class="blue">IQ</span></div>
+            <div class="brand-tag">LAB INTELLIGENCE</div>
           </div>
         </div>
-        <h1>Your lab results,<br /><span class="teal">made easier to understand.</span></h1>
-        <p class="muted">Explore blood reports, follow biomarker trends, compare results over time, and prepare thoughtful questions for your healthcare team.</p>
+        <h1>Your lab results,<br /><span class="blue">made easy to understand.</span></h1>
+        <p class="muted">Add a blood report and get a clear, patient-friendly breakdown — what's in range, what's worth a look, and how things change over time.</p>
         <ul class="brand-checks">
-          <li>Clear reference ranges</li>
-          <li>Patient history and comparisons</li>
-          <li>Patient-friendly AI explanations</li>
+          <li>Plain-language summaries</li>
+          <li>Trends and report comparisons</li>
+          <li>Ask BloodIQ anything about your results</li>
         </ul>
       </div>
       <div class="auth-portal">
         <section class="card portal-card">
           <p class="portal-kicker">PATIENT PORTAL</p>
           <h2>Welcome to BloodIQ</h2>
-          <p class="muted">Sign in to your secure patient account.</p>
+          <p class="muted">Sign in to your secure account.</p>
           <div class="auth-tabs">
             <button type="button" id="tab-login" class="auth-tab active">Log in</button>
             <button type="button" id="tab-signup" class="auth-tab">Sign up</button>
@@ -42,6 +43,10 @@
             <label>Password
               <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password" />
             </label>
+            <div class="form-row">
+              <span></span>
+              <button type="button" class="link-btn" id="forgot-btn">Forgot password?</button>
+            </div>
             <button type="submit" id="login-btn">Continue →</button>
           </form>
           <form id="signup-form" class="auth-form hidden">
@@ -66,40 +71,77 @@
   <div class="app-shell hidden" id="app-view">
     <aside class="sidebar">
       <div class="side-brand">
-        <div class="side-logo">🩸</div>
+        <img src="logo.png" alt="BloodIQ logo" class="side-logo" />
         <div>
-          <div class="side-name">BloodIQ</div>
+          <div class="side-name">Blood<span class="blue">IQ</span></div>
           <div class="side-tag">LAB INTELLIGENCE</div>
         </div>
       </div>
       <nav class="side-nav" id="tabs" aria-label="Main">
-        <button type="button" class="side-link active" data-tab="dashboard"><span class="ico">📊</span><span class="lbl">Dashboard</span></button>
-        <button type="button" class="side-link" data-tab="results"><span class="ico">🧪</span><span class="lbl">Lab results</span></button>
-        <button type="button" class="side-link" data-tab="trends"><span class="ico">📈</span><span class="lbl">Trends &amp; analytics</span></button>
-        <button type="button" class="side-link" data-tab="compare"><span class="ico">⚖️</span><span class="lbl">Compare reports</span></button>
+        <button type="button" class="side-link active" data-tab="dashboard"><span class="ico">🏠</span><span class="lbl">Home</span></button>
+        <button type="button" class="side-link" data-tab="results"><span class="ico">🧪</span><span class="lbl">My results</span></button>
+        <button type="button" class="side-link" data-tab="trends"><span class="ico">📈</span><span class="lbl">Trends</span></button>
+        <button type="button" class="side-link" data-tab="compare"><span class="ico">📊</span><span class="lbl">Compare</span></button>
         <button type="button" class="side-link" data-tab="ask"><span class="ico">💬</span><span class="lbl">Ask BloodIQ</span></button>
-        <button type="button" class="side-link" data-tab="upload"><span class="ico">📤</span><span class="lbl">Upload report</span></button>
+        <button type="button" class="side-link" data-tab="upload"><span class="ico">➕</span><span class="lbl">Add a report</span></button>
       </nav>
       <p class="side-section">ACCOUNT</p>
       <nav class="side-nav" aria-label="Account">
-        <button type="button" class="side-link" data-tab="profile"><span class="ico">👤</span><span class="lbl">Profile &amp; settings</span></button>
-        <button type="button" class="side-link" data-tab="reports"><span class="ico">🗂️</span><span class="lbl">My reports</span></button>
+        <button type="button" class="side-link" data-tab="profile"><span class="ico">👤</span><span class="lbl">My profile</span></button>
       </nav>
       <div class="side-foot">
         <div id="api-status" class="api-status" title="Backend connectivity">● connecting…</div>
         <div id="user-chip" class="hidden">
           <span id="user-name" class="side-user"></span>
-          <button id="logout-btn" class="link-btn" type="button">Logout</button>
+          <button id="logout-btn" class="link-btn" type="button">Log out</button>
         </div>
       </div>
     </aside>
     <main class="app-main" id="app-main">
 
-    <section class="card tab-panel" id="upload-card" data-panel="dashboard">
-      <h2>Upload a blood report</h2>
-      <p class="muted">PDF or image (JPG/PNG) — digital PDFs, scanned PDFs, and photos of paper reports. Text is extracted on the server; nothing leaves it unless you ask for an AI explanation.</p>
+    <section class="card tab-panel hero-card" data-panel="dashboard" data-requires="empty" id="dash-empty">
+      <h2 id="dash-greeting">Welcome to BloodIQ</h2>
+      <p class="muted">Add your first blood report to see a clear summary of your results.</p>
+      <button id="empty-add-btn" type="button">Add a new report</button>
+    </section>
+
+    <div id="dash-content" class="hidden">
+      <div class="dash-head tab-panel" data-panel="dashboard" data-requires="data">
+        <h2 id="dash-greeting-data">Welcome back</h2>
+        <button id="dash-add-btn" type="button">Add a new report</button>
+      </div>
+      <section class="card tab-panel" data-panel="dashboard" data-requires="data" id="glance-card">
+        <h3>At a glance</h3>
+        <div class="donut-wrap" id="donut-wrap"></div>
+        <p id="glance-text" class="glance-text"></p>
+      </section>
+      <section class="card tab-panel" data-panel="dashboard" data-requires="data" id="worth-card">
+        <h3>Worth a look</h3>
+        <ul id="notable-list" class="notable"></ul>
+        <button type="button" class="link-btn" id="worth-all-btn">See all results →</button>
+      </section>
+      <section class="card tab-panel" data-panel="dashboard" data-requires="data" id="dash-reports-card">
+        <div class="results-head">
+          <h3>My reports</h3>
+          <button type="button" class="link-btn" id="view-all-reports-btn">View all →</button>
+        </div>
+        <ul id="dash-recent-list" class="history"></ul>
+      </section>
+    </div>
+
+    <section class="card tab-panel" id="upload-card" data-panel="upload">
+      <h2>Add a report</h2>
+      <p class="muted">Upload a PDF or a photo of your blood report. Digital PDFs, scanned PDFs, and photos all work.</p>
       <form id="upload-form">
-        <input type="file" id="file-input" accept="application/pdf,.pdf,.jpg,.jpeg,.png" required />
+        <div class="dropzone" id="dropzone">
+          <p class="drop-ico">📄</p>
+          <p><strong>Drag &amp; drop your report here</strong></p>
+          <p class="muted small">or</p>
+          <label class="file-btn">Choose a file
+            <input type="file" id="file-input" accept="application/pdf,.pdf,.jpg,.jpeg,.png" required hidden />
+          </label>
+          <p class="muted small" id="file-name"></p>
+        </div>
         <button type="submit" id="upload-btn">Upload &amp; Analyze</button>
       </form>
       <div id="progress" class="hidden">
@@ -109,89 +151,9 @@
       <div id="upload-note" class="note hidden"></div>
     </section>
 
-    <section class="card tab-panel" data-panel="dashboard" data-requires="empty" id="dash-empty">
-      <h2>Your dashboard</h2>
-      <p class="muted">Upload your first blood report above — you'll see your range overview, result distribution, and a biomarker spotlight here.</p>
-    </section>
-
-    <section class="card tab-panel hidden" data-panel="dashboard" data-requires="data" id="stats-card">
-      <div class="stat-grid">
-        <div class="stat-card">
-          <p class="stat-label">WITHIN RANGE</p>
-          <p class="stat-num within" id="stat-within">0</p>
-          <p class="stat-sub">Results in lab interval</p>
-          <div class="stat-bar"><div id="stat-bar-within" class="within"></div></div>
-        </div>
-        <div class="stat-card">
-          <p class="stat-label">BELOW RANGE</p>
-          <p class="stat-num below" id="stat-below">0</p>
-          <p class="stat-sub">Below lab interval</p>
-          <div class="stat-bar"><div id="stat-bar-below" class="below"></div></div>
-        </div>
-        <div class="stat-card">
-          <p class="stat-label">ABOVE RANGE</p>
-          <p class="stat-num above" id="stat-above">0</p>
-          <p class="stat-sub">Above lab interval</p>
-          <div class="stat-bar"><div id="stat-bar-above" class="above"></div></div>
-        </div>
-        <div class="stat-card">
-          <p class="stat-label">REPORTS SAVED</p>
-          <p class="stat-num reports" id="stat-reports">0</p>
-          <p class="stat-sub">In your history</p>
-          <button type="button" class="link-btn" id="browse-history-btn">Browse history →</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="card tab-panel hidden" data-panel="dashboard" data-requires="data" id="latest-card">
-      <div class="results-head">
-        <h2>Latest report ✓</h2>
-        <span class="src-badge" id="latest-src"></span>
-      </div>
-      <p class="muted" id="summary-meta"></p>
-      <p id="summary-text" class="summary"></p>
-      <h3 class="subhead">Important changes</h3>
-      <ul id="notable-list" class="notable"></ul>
-      <div class="btn-row">
-        <button id="view-results-btn" type="button">View detailed results</button>
-        <button id="ask-about-btn" type="button" class="secondary">Ask BloodIQ</button>
-      </div>
-    </section>
-
-    <section class="card tab-panel hidden" data-panel="dashboard" data-requires="data" id="dist-card">
-      <div class="results-head">
-        <div>
-          <h2>Reference range distribution</h2>
-          <p class="muted">Share of measured biomarkers in latest report</p>
-        </div>
-        <span class="count-badge" id="dist-badge"></span>
-      </div>
-      <div class="donut-wrap" id="donut-wrap"></div>
-      <p class="muted small footnote">Classification uses the reference intervals printed on this report. The distribution describes reported values, not overall health.</p>
-    </section>
-
-    <section class="card tab-panel hidden" data-panel="dashboard" data-requires="data" id="spotlight-card">
-      <div class="results-head">
-        <div>
-          <h2>Biomarker spotlight</h2>
-          <p class="muted">A closer look at individual results</p>
-        </div>
-        <button type="button" class="link-btn" id="all-results-btn">All results →</button>
-      </div>
-      <div id="spotlight-body"></div>
-    </section>
-
-    <section class="card tab-panel hidden" data-panel="dashboard" data-requires="data" id="dash-recent-card">
-      <div class="results-head">
-        <h2>Recent reports</h2>
-        <button type="button" class="link-btn" id="view-all-reports-btn">View all →</button>
-      </div>
-      <ul id="dash-recent-list" class="history"></ul>
-    </section>
-
     <section class="card hidden tab-panel" id="results-card" data-panel="results">
       <div class="results-head">
-        <h2 id="report-title">Report</h2>
+        <h2 id="report-title">My results</h2>
         <div class="btn-row">
           <button id="prev-report-btn" class="secondary" type="button" title="Previous report">← Prev</button>
           <button id="next-report-btn" class="secondary" type="button" title="Next report">Next →</button>
@@ -199,7 +161,6 @@
         </div>
       </div>
       <div id="results-groups"></div>
-
       <div id="ai-panel" class="ai-panel hidden">
         <h3>AI explanation</h3>
         <p id="ai-text"></p>
@@ -208,22 +169,27 @@
 
     <section class="card tab-panel" id="trends-card" data-panel="trends">
       <h2>Trends</h2>
-      <p class="muted">Pick a biomarker to see how it changed across your reports.</p>
+      <p class="muted">Pick a test to see how it changed across your reports.</p>
       <form id="trend-form">
         <select id="trend-select" aria-label="Biomarker"></select>
+        <div class="segmented small-seg" role="group" aria-label="Chart type">
+          <button type="button" data-chart="bar" class="active">Bars</button>
+          <button type="button" data-chart="line">Line</button>
+        </div>
         <button type="submit" class="secondary">Show trend</button>
       </form>
       <div id="trend-result" class="hidden">
+        <div class="trend-stats" id="trend-stats"></div>
         <p id="trend-direction" class="trend-direction"></p>
         <canvas id="trend-chart" width="680" height="280"></canvas>
         <p id="trend-note" class="muted small"></p>
       </div>
-      <p id="trend-empty" class="muted">No trend data yet — upload at least one report first.</p>
+      <p id="trend-empty" class="muted">No trend data yet — add at least one report first.</p>
     </section>
 
     <section class="card tab-panel" id="compare-card" data-panel="compare">
-      <h2>Compare reports</h2>
-      <p class="muted">Pick two reports to see what changed between them. Arrows show direction only — an increase is not automatically better, a decrease not automatically worse.</p>
+      <h2>Compare</h2>
+      <p class="muted">Pick two reports to see how your results changed.</p>
       <form id="compare-form">
         <select id="compare-a" aria-label="Earlier report"></select>
         <select id="compare-b" aria-label="Later report"></select>
@@ -231,27 +197,23 @@
       </form>
       <div id="compare-result" class="hidden">
         <p id="compare-title" class="muted small"></p>
-        <div class="table-wrap">
-          <table id="compare-table" class="compare-table">
-            <thead><tr><th>Biomarker</th><th id="compare-head-a">A</th><th id="compare-head-b">B</th><th>Change</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <canvas id="compare-chart" width="680" height="340"></canvas>
+        <p class="muted small">Each pair of bars is one test — the lighter bar is the earlier report, the blue bar the later one.</p>
       </div>
-      <p id="compare-empty" class="muted">Upload at least two reports to compare them.</p>
+      <p id="compare-empty" class="muted">Add at least two reports to compare them.</p>
     </section>
 
     <section class="card tab-panel" id="history-card" data-panel="reports">
-      <h2>Recent reports</h2>
+      <h2>My reports</h2>
       <ul id="history-list" class="history"></ul>
     </section>
 
     <section class="card tab-panel" id="profile-card" data-panel="profile">
-      <h2>Profile</h2>
+      <h2>My profile</h2>
       <p><strong>Name:</strong> <span id="profile-name"></span></p>
       <p><strong>Email:</strong> <span id="profile-email"></span></p>
       <p class="muted small">Your reports and chat stay private to this account.</p>
-      <button id="profile-logout-btn" type="button" class="secondary">Logout</button>
+      <button id="profile-logout-btn" type="button" class="secondary">Log out</button>
     </section>
 
     <section class="card tab-panel" id="chat-card" data-panel="ask">
@@ -269,8 +231,8 @@
       <p id="chat-mode-desc" class="muted small"></p>
       <div id="chat-log" class="chat-log" aria-live="polite">
         <div id="chat-welcome" class="chat-welcome">
-          <div class="chat-welcome-avatar">🩸</div>
-          <p><strong>Hi, I'm BloodIQ.</strong><br />Ask me about any of your results — what a test means, why a value is flagged, or how it changed over time.</p>
+          <div class="chat-welcome-avatar"><img src="logo.png" alt="BloodIQ" /></div>
+          <p><strong>Hi, I'm BloodIQ.</strong><br />Ask me about any of your results — what a test means, why a value was flagged, or how it changed over time.</p>
           <div class="chat-suggest">
             <button type="button">Why is my hemoglobin low?</button>
             <button type="button">Explain my cholesterol results</button>
@@ -289,9 +251,8 @@
 
     <footer class="disclaimer">
       BloodIQ is educational and is <strong>not a substitute for professional
-      medical advice</strong>. Reference ranges shown are the ones printed on
-      each lab report — always confirm with your report and consult a qualified
-      healthcare professional.
+      medical advice</strong>. Ranges shown are the ones printed on
+      each lab report — always confirm with your report and check with your doctor.
     </footer>
     </main>
   </div>

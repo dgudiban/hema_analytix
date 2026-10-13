@@ -152,7 +152,8 @@ const GROUPS = [
   { key: "unknown", icon: "⚪", title: "No reference range on report", match: (s) => s !== "LOW" && s !== "HIGH" && s !== "NORMAL" },
 ];
 
-const BAR_COLORS = { low: "#fb7185", normal: "#34d399", high: "#fbbf24" };
+const BAR_COLORS = { low: "#f5b301", normal: "#22c55e", high: "#d01a35" };
+const STATUS_LABEL = { LOW: "Below", NORMAL: "Normal", HIGH: "Above" };
 
 /* Largest-remainder percentages that always sum to exactly 100. */
 function pct100(counts) {
@@ -202,7 +203,7 @@ function donutHTML(results) {
   return `
     <div class="donut" role="img" aria-label="Result distribution: ${segs.map((s, i) => `${s.label} ${pcts[i]} percent`).join(", ")}">
       <svg viewBox="0 0 36 36" class="donut-svg">
-        <circle r="15.9155" cx="18" cy="18" fill="none" stroke="#1e293b" stroke-width="6" />
+        <circle r="15.9155" cx="18" cy="18" fill="none" stroke="#0d1b31" stroke-width="6" />
         ${circles}
       </svg>
       <div class="donut-center"><strong>${total}</strong><span>${total === 1 ? "marker" : "markers"}</span></div>
@@ -299,7 +300,7 @@ function biomarkerRowHTML(r) {
       <button type="button" class="bio-row-head" aria-expanded="false">
         <span class="bio-name">${escapeHtml(r.standard_name)}${calcBadge}</span>
         <span class="bio-value"><strong>${r.value}</strong> ${escapeHtml(r.unit)}</span>
-        <span class="pill ${r.status.toLowerCase()}">${r.status}</span>
+        <span class="pill ${r.status.toLowerCase()}">${STATUS_LABEL[r.status] || r.status}</span>
         <span class="chev">▸</span>
       </button>
       <div class="bio-row-detail hidden">
@@ -311,33 +312,6 @@ function biomarkerRowHTML(r) {
     </div>`;
 }
 
-function setStat(key, n, total) {
-  $(`stat-${key}`).textContent = n;
-  $(`stat-bar-${key}`).style.width = total ? `${Math.round((n / total) * 100)}%` : "0%";
-}
-
-function renderSpotlight(results) {
-  const body = $("spotlight-body");
-  const spot = results.find((r) => r.status === "LOW")
-    || results.find((r) => r.status === "HIGH")
-    || results[0];
-  if (!spot) {
-    body.innerHTML = `<p class="muted">No biomarkers to spotlight.</p>`;
-    return;
-  }
-  const range = spot.ref_low != null || spot.ref_high != null
-    ? ` <span class="muted small">(${spot.ref_low ?? "\u2013"} \u2013 ${spot.ref_high ?? "\u2013"} ${escapeHtml(spot.unit || "")})</span>`
-    : "";
-  body.innerHTML = `
-    <div class="spotlight-row">
-      <div>
-        <p class="spotlight-name">${escapeHtml(spot.standard_name)}</p>
-        <p class="spotlight-value">${spot.value} ${escapeHtml(spot.unit || "")}${range}</p>
-      </div>
-      <span class="pill ${spot.status.toLowerCase()}">${spot.status}</span>
-    </div>`;
-}
-
 function renderQuickSummary(data) {
   const results = data.results || [];
   const below = results.filter((r) => r.status === "LOW");
@@ -345,104 +319,43 @@ function renderQuickSummary(data) {
   const within = results.filter((r) => r.status === "NORMAL");
   const total = results.length;
 
-  setStat("within", within.length, total);
-  setStat("below", below.length, total);
-  setStat("above", above.length, total);
-
-  const dateStr = data.report_date ? ` · ${data.report_date}` : "";
-  $("summary-meta").textContent = `${total} biomarker${total === 1 ? "" : "s"} detected${dateStr}`;
-  $("summary-text").textContent = data.summary || "";
-  const srcBadge = $("latest-src");
-  if (data.extraction_source === "ai") {
-    srcBadge.textContent = "AI-extracted";
-    srcBadge.style.display = "";
-  } else if (data.extraction_source) {
-    srcBadge.textContent = "rule-parsed";
-    srcBadge.style.display = "";
-  } else {
-    srcBadge.style.display = "none";
-  }
-
   renderDonut(results);
-  $("dist-badge").textContent = `${total} result${total === 1 ? "" : "s"}`;
-  renderSpotlight(results);
+  const pct = total ? Math.round((within.length / total) * 100) : 0;
+  $("glance-text").innerHTML =
+    `<strong>${within.length} of ${total}</strong> results in range (${pct}%)`;
 
   const notable = $("notable-list");
   notable.innerHTML = "";
-  const flagged = [...below, ...above].slice(0, 6);
+  const flagged = [...below, ...above].slice(0, 5);
   if (flagged.length === 0) {
-    notable.innerHTML = `<li class="muted">All values are within their reference ranges.</li>`;
+    notable.innerHTML = `<li class="muted">Everything is in range. Nice.</li>`;
   } else {
     for (const r of flagged) {
       const li = document.createElement("li");
       const dir = r.status === "LOW" ? "below" : "above";
-      li.innerHTML = `<strong>${escapeHtml(r.standard_name)}</strong> — ${dir} range (${r.value} ${escapeHtml(r.unit)})`;
+      li.innerHTML = `<strong>${escapeHtml(r.standard_name)}</strong> is ${dir} range (${r.value} ${escapeHtml(r.unit)})`;
       notable.appendChild(li);
     }
   }
 
+  const user = currentUser();
+  const first = user && user.name ? user.name.split(" ")[0] : "";
+  $("dash-greeting-data").textContent = first ? `Welcome back, ${first}` : "Welcome back";
+
   dashboardHasData = true;
+  refreshDashboardPanels();
+}
+
+function refreshDashboardPanels() {
   document.querySelectorAll('.tab-panel[data-panel="dashboard"]').forEach((p) => {
     let show = true;
     if (p.dataset.requires === "data" && !dashboardHasData) show = false;
     if (p.dataset.requires === "empty" && dashboardHasData) show = false;
     p.classList.toggle("hidden", !show);
   });
+  $("dash-content").classList.toggle("hidden", !dashboardHasData);
 }
 
-function renderResults(data) {
-  renderQuickSummary(data);
-
-  $("results-card").classList.remove("hidden");
-  const detail = data.extraction_detail || {};
-  const failed = detail.failed_chunks || 0;
-  const failNote = failed
-    ? ` ${failed}/${detail.chunks || "?"} chunk(s) fell back to rule parsing (${(detail.fail_reasons || []).join(", ")}).`
-    : "";
-  const srcBadge =
-    data.extraction_source === "ai"
-      ? ` <span class="src-badge" title="Values transcribed by AI from the report's printed text; statuses computed deterministically.${failNote}">AI-extracted${failed ? "*" : ""}</span>`
-      : ` <span class="src-badge" title="Values matched by the rule-based parser.${failNote}">rule-parsed</span>`;
-  $("report-title").innerHTML = `Report #${data.report_id}${srcBadge}`;
-  lastReportId = data.report_id;
-  lastAiExplanation = data.ai_explanation;
-  $("ai-panel").classList.add("hidden");
-
-  const groupsEl = $("results-groups");
-  groupsEl.innerHTML = "";
-  const results = data.results || [];
-  for (const g of GROUPS) {
-    const members = results.filter((r) => g.match(r.status));
-    if (members.length === 0) continue;
-    const section = document.createElement("section");
-    section.className = `result-group ${g.key}`;
-    section.innerHTML = `
-      <h3 class="group-head">${g.icon} ${g.title} <span class="group-count">${members.length}</span></h3>
-      <div class="group-body"></div>`;
-    const body = section.querySelector(".group-body");
-    for (const r of members) {
-      const wrap = document.createElement("div");
-      wrap.innerHTML = biomarkerRowHTML(r);
-      body.appendChild(wrap.firstElementChild);
-    }
-    groupsEl.appendChild(section);
-  }
-  if (results.length === 0) {
-    groupsEl.innerHTML = `<p class="muted">No biomarkers found in this report's text.</p>`;
-  }
-
-  // Expandable rows.
-  groupsEl.querySelectorAll(".bio-row-head").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const detailEl = btn.nextElementSibling;
-      const open = detailEl.classList.toggle("hidden");
-      btn.setAttribute("aria-expanded", String(!open));
-      btn.querySelector(".chev").textContent = open ? "▸" : "▾";
-    });
-  });
-
-  $("latest-card").scrollIntoView({ behavior: "smooth" });
-}
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -537,7 +450,7 @@ async function handleUpload(event) {
     await loadHistory();
     await loadTrend(); // a new report may add trend points
     await loadCompareReports();
-    switchTab("dashboard");
+    switchTab("results");
   } catch (err) {
     alert(`Error: ${err.message}`);
   } finally {
@@ -598,7 +511,6 @@ async function loadHistory() {
     const reports = await res.json();
     list.innerHTML = "";
     dashList.innerHTML = "";
-    $("stat-reports").textContent = reports.length;
     if (reports.length === 0) {
       list.innerHTML = `<li class="muted">No reports yet.</li>`;
       dashList.innerHTML = `<li class="muted">No reports yet.</li>`;
@@ -621,7 +533,7 @@ async function loadHistory() {
         e.preventDefault();
         try {
           await loadReport(r.id);
-          switchTab("dashboard");
+          switchTab("results");
         } catch (err) {
           alert(`Error: ${err.message}`);
         }
@@ -680,31 +592,65 @@ async function runCompare(e) {
     if (!res.ok) throw new Error("compare failed");
     const data = await res.json();
     const fmtSide = (s) => `#${s.id} ${s.filename}${s.report_date ? ` · ${s.report_date}` : ""}`;
-    $("compare-head-a").textContent = `A — ${fmtSide(data.a)}`;
-    $("compare-head-b").textContent = `B — ${fmtSide(data.b)}`;
     $("compare-title").textContent =
-      `Comparing earlier ${fmtSide(data.a)} with later ${fmtSide(data.b)}.`;
-    const tb = $("compare-table").querySelector("tbody");
-    tb.innerHTML = "";
-    const statusPill = (s) => s ? `<span class="pill ${s.toLowerCase()}">${s}</span>` : `<span class="muted">—</span>`;
-    const valCell = (v, s, unit) =>
-      v == null ? `<span class="muted">—</span>` : `${v} ${escapeHtml(unit || "")} ${statusPill(s)}`;
-    for (const row of data.rows) {
-      const [mark, cls, title] = CHANGE_BADGE[row.change] || CHANGE_BADGE.same;
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><strong>${escapeHtml(row.standard_name)}</strong></td>
-        <td>${valCell(row.a_value, row.a_status, row.unit)}</td>
-        <td>${valCell(row.b_value, row.b_status, row.unit)}</td>
-        <td><span class="chg ${cls}" title="${title}">${mark}</span></td>`;
-      tb.appendChild(tr);
-    }
+      `Comparing ${fmtSide(data.a)} (earlier) with ${fmtSide(data.b)} (later) — biggest movers first.`;
+    drawCompare(data);
     resEl.classList.remove("hidden");
   } catch {
     resEl.classList.add("hidden");
     $("compare-empty").textContent = "Could not compare those reports.";
     $("compare-empty").classList.remove("hidden");
   }
+}
+
+function drawCompare(data) {
+  // One glanceable chart: horizontal paired bars per biomarker, each pair
+  // normalized to its own max (tests have different units). Biggest movers first.
+  const canvas = $("compare-chart");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const rows = data.rows.filter((r) =>
+    r.a_value != null && r.b_value != null && isFinite(r.a_value) && isFinite(r.b_value));
+  const pct = (r) => r.a_value === 0 ? (r.b_value === 0 ? 0 : 100)
+    : ((r.b_value - r.a_value) / Math.abs(r.a_value)) * 100;
+  rows.sort((x, y) => Math.abs(pct(y)) - Math.abs(pct(x)));
+  const top = rows.slice(0, 12);
+  const C_A = "#5b7a99", C_B = "#2b8fd4";
+  // legend
+  ctx.font = "12px system-ui";
+  ctx.fillStyle = C_A; ctx.fillRect(8, 8, 14, 10);
+  ctx.fillStyle = "#8fa3bd"; ctx.fillText("Earlier", 28, 17);
+  ctx.fillStyle = C_B; ctx.fillRect(100, 8, 14, 10);
+  ctx.fillStyle = "#8fa3bd"; ctx.fillText("Later", 120, 17);
+  if (!top.length) {
+    ctx.fillStyle = "#8fa3bd";
+    ctx.fillText("No overlapping tests to compare.", 8, 44);
+    return;
+  }
+  const labelW = 150, padR = 76, padT = 30;
+  const rowH = Math.min(46, (H - padT - 12) / top.length);
+  const maxW = W - labelW - padR;
+  top.forEach((r, i) => {
+    const y = padT + i * rowH;
+    const mid = y + rowH / 2;
+    const mx = Math.max(Math.abs(r.a_value), Math.abs(r.b_value), 1e-9);
+    const wa = (Math.abs(r.a_value) / mx) * maxW;
+    const wb = (Math.abs(r.b_value) / mx) * maxW;
+    const name = r.standard_name.length > 24 ? r.standard_name.slice(0, 23) + "…" : r.standard_name;
+    ctx.fillStyle = "#e9eff8";
+    ctx.font = "12px system-ui";
+    ctx.fillText(name, 6, mid + 4);
+    const bh = 9, gapB = 4;
+    ctx.fillStyle = C_A;
+    ctx.fillRect(labelW, mid - bh - gapB / 2, Math.max(2, wa), bh);
+    ctx.fillStyle = C_B;
+    ctx.fillRect(labelW, mid + gapB / 2, Math.max(2, wb), bh);
+    ctx.fillStyle = "#8fa3bd";
+    ctx.font = "11px system-ui";
+    ctx.fillText(`${r.a_value}`, labelW + wa + 6, mid - 3);
+    ctx.fillText(`${r.b_value} ${r.unit || ""}`, labelW + wb + 6, mid + 12);
+  });
 }
 
 async function loadBiomarkers() {
@@ -745,6 +691,15 @@ async function loadTrend() {
     const dirLabel = TREND_DIR_LABEL[trend.direction] || trend.direction;
     dir.textContent = `${trend.standard_name}: ${dirLabel} across ${trend.points.length} report${trend.points.length === 1 ? "" : "s"}`;
     dir.className = `trend-direction ${trend.direction}`;
+    lastTrend = trend;
+    const pts = trend.points;
+    const first = pts[0], last = pts[pts.length - 1];
+    const delta = pts.length > 1 ? (last.value - first.value) : 0;
+    const dstr = pts.length > 1 ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)} ${trend.unit || ""}` : "—";
+    $("trend-stats").innerHTML = `
+      <span class="tstat"><strong>${pts.length}</strong>reports</span>
+      <span class="tstat"><strong>${last.value}</strong>latest${trend.unit ? ` (${trend.unit})` : ""}</span>
+      <span class="tstat"><strong>${dstr}</strong>change</span>`;
     drawTrend(trend);
     const note = $("trend-note");
     note.textContent = trend.excluded.length
@@ -758,6 +713,16 @@ async function loadTrend() {
 }
 
 const TREND_DIR_LABEL = { improving: "trending up", declining: "trending down", stable: "stable" };
+let trendChartType = "bar";
+let lastTrend = null;
+document.querySelectorAll("[data-chart]").forEach((b) =>
+  b.addEventListener("click", () => {
+    trendChartType = b.dataset.chart;
+    document.querySelectorAll("[data-chart]").forEach((x) =>
+      x.classList.toggle("active", x === b));
+    if (lastTrend) drawTrend(lastTrend);
+  })
+);
 
 function drawTrend(trend) {
   // Bar chart, one bar per report. Bars are colored by that report's own
@@ -771,7 +736,7 @@ function drawTrend(trend) {
   const pts = trend.points;
   if (pts.length === 0) return;
 
-  const STATUS_FILL = { LOW: "#fb7185", NORMAL: "#34d399", HIGH: "#fbbf24" };
+  const STATUS_FILL = { LOW: "#f5b301", NORMAL: "#22c55e", HIGH: "#d01a35" };
   const vals = pts.map((p) => p.value);
   let min = Math.min(...vals), max = Math.max(...vals);
   const latest = pts[pts.length - 1];
@@ -790,14 +755,14 @@ function drawTrend(trend) {
 
   // Normal band from the latest report's printed range.
   if (bandLo != null && bandHi != null && bandHi > bandLo) {
-    ctx.fillStyle = "rgba(52, 211, 153, 0.12)";
+    ctx.fillStyle = "rgba(34, 197, 94, 0.12)";
     ctx.fillRect(padL, ys(bandHi), W - padL - padR, ys(bandLo) - ys(bandHi));
-    ctx.strokeStyle = "rgba(52, 211, 153, 0.45)";
+    ctx.strokeStyle = "rgba(34, 197, 94, 0.45)";
     ctx.setLineDash([5, 4]);
     ctx.beginPath(); ctx.moveTo(padL, ys(bandHi)); ctx.lineTo(W - padR, ys(bandHi)); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(padL, ys(bandLo)); ctx.lineTo(W - padR, ys(bandLo)); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = "#34d399";
+    ctx.fillStyle = "#22c55e";
     ctx.font = "10px system-ui";
     ctx.fillText(`ref on latest report: ${bandLo}–${bandHi}`, padL + 4, ys(bandHi) - 5);
   }
@@ -805,7 +770,7 @@ function drawTrend(trend) {
   // Gridlines + y labels.
   ctx.font = "11px system-ui";
   ctx.fillStyle = "#94a3b8";
-  ctx.strokeStyle = "#243145";
+  ctx.strokeStyle = "#1e3a5f";
   ctx.lineWidth = 1;
   for (let g = 0; g <= 4; g++) {
     const v = min + ((max - min) * g) / 4;
@@ -814,23 +779,45 @@ function drawTrend(trend) {
     ctx.fillText(v.toFixed(1), 6, y + 4);
   }
 
-  // Bars.
   canvas._trendPts = pts.map((p, i) => ({ p, x: xs(i) - barW / 2, w: barW, yTop: ys(p.value), yBase: ys(Math.max(min, 0)) }));
-  pts.forEach((p, i) => {
-    const x = xs(i) - barW / 2;
-    const yTop = ys(p.value);
-    const yBase = ys(Math.max(min, 0));
-    ctx.fillStyle = STATUS_FILL[p.status] || "#64748b";
-    ctx.fillRect(x, yTop, barW, Math.max(2, yBase - yTop));
-    ctx.fillStyle = "#e2e8f0";
-    ctx.fillText(String(p.value), x, yTop - 6);
-    ctx.fillStyle = "#94a3b8";
-    const label = (p.report_date || "").slice(5) || "?";
-    ctx.fillText(label, xs(i) - 14, H - 26);
-    const rng = p.ref_low != null && p.ref_high != null ? `${p.ref_low}–${p.ref_high}`
-      : p.ref_high != null ? `<${p.ref_high}` : p.ref_low != null ? `>${p.ref_low}` : "no range";
-    ctx.fillText(rng, xs(i) - 20, H - 10);
-  });
+  const drawLabels = () => {
+    ctx.fillStyle = "#e9eff8";
+    pts.forEach((p, i) => {
+      ctx.fillStyle = "#e9eff8";
+      ctx.fillText(String(p.value), xs(i) - 10, ys(p.value) - 10);
+      ctx.fillStyle = "#94a3b8";
+      const label = (p.report_date || "").slice(5) || "?";
+      ctx.fillText(label, xs(i) - 14, H - 26);
+      const rng = p.ref_low != null && p.ref_high != null ? `${p.ref_low}–${p.ref_high}`
+        : p.ref_high != null ? `<${p.ref_high}` : p.ref_low != null ? `>${p.ref_low}` : "no range";
+      ctx.fillText(rng, xs(i) - 20, H - 10);
+    });
+  };
+  if (trendChartType === "line" && pts.length > 1) {
+    ctx.strokeStyle = "#2b8fd4";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const x = xs(i), y = ys(p.value);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    pts.forEach((p) => {
+      ctx.fillStyle = STATUS_FILL[p.status] || "#64748b";
+      ctx.beginPath(); ctx.arc(xs(pts.indexOf(p)), ys(p.value), 5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#0a1628"; ctx.lineWidth = 2; ctx.stroke();
+    });
+    drawLabels();
+  } else {
+    pts.forEach((p, i) => {
+      const x = xs(i) - barW / 2;
+      const yTop = ys(p.value);
+      const yBase = ys(Math.max(min, 0));
+      ctx.fillStyle = STATUS_FILL[p.status] || "#64748b";
+      ctx.fillRect(x, yTop, barW, Math.max(2, yBase - yTop));
+    });
+    drawLabels();
+  }
 
   ctx.fillStyle = "#94a3b8";
   ctx.fillText(trend.unit || "", W - padR - 30, padT + 4);
@@ -936,7 +923,8 @@ function addChatBubble(role, text, opts = {}) {
 
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
-  avatar.textContent = role === "user" ? "👤" : "🩸";
+  if (role === "user") { avatar.textContent = "👤"; }
+  else { avatar.innerHTML = '<img src="logo.png" alt="BloodIQ" />'; }
   msg.appendChild(avatar);
 
   const body = document.createElement("div");
@@ -999,7 +987,7 @@ function addThinking() {
   msg.className = "chat-msg assistant";
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
-  avatar.textContent = "🩸";
+  avatar.innerHTML = '<img src="logo.png" alt="BloodIQ" />';
   msg.appendChild(avatar);
   const body = document.createElement("div");
   body.className = "chat-body";
@@ -1199,10 +1187,6 @@ let dashboardHasData = false;
 let activeView = "dashboard";
 
 function switchTab(name) {
-  if (name === "upload") {
-    name = "dashboard";
-    setTimeout(() => $("upload-card").scrollIntoView({ behavior: "smooth", block: "start" }), 60);
-  }
   activeView = name;
   document.querySelectorAll("#tabs .side-link").forEach((t) =>
     t.classList.toggle("active", t.dataset.tab === activeView)
@@ -1224,22 +1208,41 @@ function loadProfile() {
 }
 
 $("upload-form").addEventListener("submit", handleUpload);
+const dz = $("dropzone"), fi = $("file-input");
+fi.addEventListener("change", () => {
+  $("file-name").textContent = fi.files[0] ? fi.files[0].name : "";
+});
+["dragover", "dragenter"].forEach((ev) => dz.addEventListener(ev, (e) => {
+  e.preventDefault(); dz.classList.add("drag");
+}));
+["dragleave", "drop"].forEach((ev) => dz.addEventListener(ev, (e) => {
+  e.preventDefault(); dz.classList.remove("drag");
+}));
+dz.addEventListener("drop", (e) => {
+  if (e.dataTransfer.files.length) {
+    fi.files = e.dataTransfer.files;
+    $("file-name").textContent = fi.files[0].name;
+  }
+});
 document.querySelectorAll("#tabs .side-link").forEach((t) =>
   t.addEventListener("click", () => switchTab(t.dataset.tab))
 );
 document.querySelectorAll(".sidebar .side-nav:not(#tabs) .side-link").forEach((t) =>
   t.addEventListener("click", () => switchTab(t.dataset.tab))
 );
-$("view-results-btn").addEventListener("click", () =>
+$("empty-add-btn").addEventListener("click", () =>
+  switchTab("upload"));
+$("dash-add-btn").addEventListener("click", () =>
+  switchTab("upload"));
+$("worth-all-btn").addEventListener("click", () =>
   switchTab("results"));
-$("ask-about-btn").addEventListener("click", () =>
-  switchTab("ask"));
-$("browse-history-btn").addEventListener("click", () =>
-  switchTab("reports"));
 $("view-all-reports-btn").addEventListener("click", () =>
   switchTab("reports"));
-$("all-results-btn").addEventListener("click", () =>
-  switchTab("results"));
+$("forgot-btn").addEventListener("click", () => {
+  const err = $("auth-error");
+  err.textContent = "Password reset isn't available yet — please ask support for help.";
+  err.classList.remove("hidden");
+});
 $("prev-report-btn").addEventListener("click", () => stepReport(1));
 $("next-report-btn").addEventListener("click", () => stepReport(-1));
 $("profile-logout-btn").addEventListener("click", logout);
