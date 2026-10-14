@@ -99,6 +99,11 @@
     </aside>
     <main class="app-main" id="app-main">
 
+    <div id="member-strip" class="member-strip hidden" title="Switch whose reports you are viewing">
+      <span class="member-strip-label">Viewing:</span>
+      <div id="member-chips" class="member-chips"></div>
+    </div>
+
     <section class="card tab-panel hero-card" data-panel="dashboard" data-requires="empty" id="dash-empty">
       <h2 id="dash-greeting">Welcome to BloodIQ</h2>
       <p class="muted">Add your first blood report to see a clear summary of your results.</p>
@@ -133,6 +138,8 @@
       <h2>Add a report</h2>
       <p class="muted">Upload a PDF or a photo of your blood report. Digital PDFs, scanned PDFs, and photos all work.</p>
       <form id="upload-form">
+        <label class="field-label" for="upload-member">Whose report is this?</label>
+        <select id="upload-member" class="member-select"></select>
         <div class="dropzone" id="dropzone">
           <p class="drop-ico">📄</p>
           <p><strong>Drag &amp; drop your report here</strong></p>
@@ -213,7 +220,11 @@
       <p><strong>Name:</strong> <span id="profile-name"></span></p>
       <p><strong>Email:</strong> <span id="profile-email"></span></p>
       <p class="muted small">Your reports and chat stay private to this account.</p>
-      <button id="profile-logout-btn" type="button" class="secondary">Log out</button>
+      <h3 class="section-head">Family profiles</h3>
+      <p class="muted small">Track blood reports for family members under this account. Each profile keeps its own reports, trends, and chat history.</p>
+      <ul id="family-list" class="family-list"></ul>
+      <button id="family-add-btn" type="button" class="secondary">+ Add family member</button>
+      <div class="profile-logout-row"><button id="profile-logout-btn" type="button" class="secondary">Log out</button></div>
     </section>
 
     <section class="card tab-panel" id="chat-card" data-panel="ask">
@@ -254,6 +265,35 @@
       medical advice</strong>. Ranges shown are the ones printed on
       each lab report — always confirm with your report and check with your doctor.
     </footer>
+    <div id="member-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="member-modal-title">
+      <div class="modal-card">
+        <h3 id="member-modal-title">Add family member</h3>
+        <label class="field-label" for="mm-name">Name</label>
+        <input id="mm-name" type="text" maxlength="120" placeholder="e.g. Lakshmi" autocomplete="off" />
+        <label class="field-label" for="mm-rel">Relationship</label>
+        <select id="mm-rel">
+          <option value="father">Father</option>
+          <option value="mother">Mother</option>
+          <option value="spouse">Spouse</option>
+          <option value="son">Son</option>
+          <option value="daughter">Daughter</option>
+          <option value="other" selected>Other</option>
+        </select>
+        <label class="field-label" for="mm-sex">Sex <span class="muted small">(used for reference ranges)</span></label>
+        <select id="mm-sex">
+          <option value="">Prefer not to say</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+        <label class="field-label" for="mm-dob">Date of birth <span class="muted small">(optional)</span></label>
+        <input id="mm-dob" type="date" />
+        <div class="btn-row modal-actions">
+          <button id="mm-save" type="button">Save</button>
+          <button id="mm-cancel" type="button" class="secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
     </main>
   </div>
 

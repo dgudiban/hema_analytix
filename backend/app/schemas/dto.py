@@ -59,6 +59,7 @@ class ReportSummary(BaseModel):
     report_date: date | None = None
     uploaded_at: datetime
     result_count: int
+    member_id: int | None = None
 
 
 class ReportDetail(BaseModel):
@@ -69,6 +70,30 @@ class ReportDetail(BaseModel):
     results: list[ResultOut]
     summary: str = ""
     extraction_source: str = "rules"
+    member_id: int | None = None
+
+
+class FamilyMemberCreate(BaseModel):
+    name: str
+    relationship: str = "other"  # father|mother|spouse|son|daughter|other
+    sex: str | None = None  # male|female|other
+    date_of_birth: date | None = None
+
+
+class FamilyMemberUpdate(BaseModel):
+    name: str | None = None
+    relationship: str | None = None
+    sex: str | None = None
+    date_of_birth: date | None = None
+
+
+class FamilyMemberOut(BaseModel):
+    id: int
+    name: str
+    relationship: str
+    sex: str | None = None
+    date_of_birth: date | None = None
+    report_count: int = 0
 
 
 class TrendPoint(BaseModel):
@@ -127,6 +152,8 @@ class ChatRequest(BaseModel):
     message: str
     report_id: int | None = None
     history: list[ChatMessage] = []
+    # Family profile scope; None = the account owner.
+    member_id: int | None = None
 
 
 class ChatSource(BaseModel):

@@ -34,23 +34,29 @@ function showAuth() {
   $("user-chip").classList.add("hidden");
 }
 
-function showApp(user) {
+async function showApp(user) {
   currentUser = user;
   $("auth-view").classList.add("hidden");
   $("app-view").classList.remove("hidden");
   $("user-chip").classList.remove("hidden");
+  $("member-strip").classList.remove("hidden");
   $("user-name").textContent = `👤 ${user.name}`;
+  const saved = localStorage.getItem(MEMBER_KEY);
+  selectedMemberId = saved ? Number(saved) : null;
+  await loadFamily(); // validates the saved selection, renders chips/list/select
   loadProfile();
   switchTab("dashboard");
-  loadHistory();
-  loadTrend();
-  loadCompareReports();
+  await refreshProfileData();
 }
 
 function logout() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(MEMBER_KEY);
   currentUser = null;
+  familyMembers = [];
+  selectedMemberId = null;
   lastReportId = null;
+  $("member-strip").classList.add("hidden");
   showAuth();
 }
 
@@ -338,7 +344,7 @@ function renderQuickSummary(data) {
     }
   }
 
-  const first = currentUser && currentUser.name ? currentUser.name.split(" ")[0] : "";
+  const first = profileName();
   $("dash-greeting-data").textContent = first ? `Welcome back, ${first}` : "Welcome back";
 
   dashboardHasData = true;
@@ -479,6 +485,8 @@ async function handleUpload(event) {
   try {
     const form = new FormData();
     form.append("file", file);
+    const upMember = $("upload-member").value;
+    if (upMember) form.append("member_id", upMember);
     const upRes = await api(`/api/reports/upload`, { method: "POST", body: form });
     if (!upRes.ok) {
       const err = await upRes.json().catch(() => ({}));
@@ -493,7 +501,7 @@ async function handleUpload(event) {
       note.classList.remove("hidden");
     }
 
-    progress.textContent = "Analyzing… (AI extraction takes ~3–4 min for a full report)";
+    startProgress("analyze");
     const anRes = await api(`/api/reports/${uploaded.report_id}/analyze`, { method: "POST" });
     if (!anRes.ok) throw new Error("Analysis failed");
     const analyzed = await anRes.json();
@@ -560,16 +568,16 @@ async function loadHistory() {
   const list = $("history-list");
   const dashList = $("dash-recent-list");
   try {
-    const res = await api(`/api/reports`);
+    const res = await api(`/api/reports${memberQuery()}`);
     const reports = await res.json();
     list.innerHTML = "";
     dashList.innerHTML = "";
+    reportIds = reports.map((r) => r.id);
     if (reports.length === 0) {
       list.innerHTML = `<li class="muted">No reports yet.</li>`;
       dashList.innerHTML = `<li class="muted">No reports yet.</li>`;
       return;
     }
-    reportIds = reports.map((r) => r.id);
     const addRow = (r, idx, target) => {
       const li = document.createElement("li");
       const link = document.createElement("a");
@@ -614,7 +622,7 @@ const CHANGE_BADGE = {
 async function loadCompareReports() {
   const aSel = $("compare-a"), bSel = $("compare-b");
   try {
-    const res = await api("/api/reports");
+    const res = await api(`/api/reports${memberQuery()}`);
     const reports = (await res.json()).slice().sort((x, y) => x.id - y.id);
     aSel.innerHTML = ""; bSel.innerHTML = "";
     for (const r of reports) {
@@ -735,7 +743,7 @@ async function loadTrend() {
     return;
   }
   try {
-    const res = await api(`/api/reports/trends/${id}`);
+    const res = await api(`/api/reports/trends/${id}${memberQuery()}`);
     if (!res.ok) throw new Error("no data");
     const trend = await res.json();
     result.classList.remove("hidden");
@@ -1067,7 +1075,7 @@ async function sendChatMessage(message) {
     const url = mode === "baseline" ? `${API}/api/chat/baseline` : `${API}/api/chat`;
     const body = mode === "baseline"
       ? { message }
-      : { message, report_id: lastReportId, history: chatHistory.slice(0, -1) };
+      : { message, report_id: lastReportId, history: chatHistory.slice(0, -1), member_id: selectedMemberId };
     const res = await api(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1306,3 +1314,206 @@ $("compare-form").addEventListener("submit", runCompare);
 checkHealth();
 loadBiomarkers();
 initAuth();
+
+
+/* ---------------- Family profiles ---------------- */
+const MEMBER_KEY = "bloodiq_member";
+let familyMembers = [];
+let selectedMemberId = null; // null = the account owner ("Me")
+let editingMemberId = null;
+
+function memberQuery() {
+  return selectedMemberId == null ? "" : `?member_id=${encodeURIComponent(selectedMemberId)}`;
+}
+
+function profileName() {
+  if (selectedMemberId != null) {
+    const m = familyMembers.find((x) => x.id === selectedMemberId);
+    if (m) return m.name;
+  }
+  return currentUser && currentUser.name ? currentUser.name.split(" ")[0] : "";
+}
+
+async function loadFamily() {
+  try {
+    const res = await api("/api/family");
+    familyMembers = res.ok ? await res.json() : [];
+  } catch {
+    familyMembers = [];
+  }
+  if (selectedMemberId != null && !familyMembers.some((m) => m.id === selectedMemberId)) {
+    selectedMemberId = null;
+    localStorage.removeItem(MEMBER_KEY);
+  }
+  renderMemberChips();
+  renderFamilyList();
+  renderUploadMemberSelect();
+}
+
+function renderMemberChips() {
+  const wrap = $("member-chips");
+  wrap.innerHTML = "";
+  const mk = (label, id, title) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip" + (selectedMemberId === id ? " active" : "");
+    b.textContent = label;
+    if (title) b.title = title;
+    b.addEventListener("click", () => selectMember(id));
+    return b;
+  };
+  const meLabel = currentUser && currentUser.name ? currentUser.name.split(" ")[0] : "Me";
+  wrap.appendChild(mk(meLabel, null, "Your own reports"));
+  for (const m of familyMembers) {
+    wrap.appendChild(mk(m.name, m.id, `${m.relationship} · ${m.report_count} report(s)`));
+  }
+  const add = document.createElement("button");
+  add.type = "button";
+  add.className = "chip chip-add";
+  add.textContent = "+ Add";
+  add.title = "Add a family member";
+  add.addEventListener("click", () => openMemberModal(null));
+  wrap.appendChild(add);
+}
+
+const REL_LABELS = { father: "Father", mother: "Mother", spouse: "Spouse", son: "Son", daughter: "Daughter", other: "Other" };
+
+function renderFamilyList() {
+  const ul = $("family-list");
+  ul.innerHTML = "";
+  if (!familyMembers.length) {
+    const li = document.createElement("li");
+    li.className = "muted";
+    li.textContent = "No family profiles yet.";
+    ul.appendChild(li);
+    return;
+  }
+  for (const m of familyMembers) {
+    const li = document.createElement("li");
+    const left = document.createElement("div");
+    const nm = document.createElement("div");
+    nm.className = "fam-name";
+    nm.textContent = m.name;
+    const sub = document.createElement("div");
+    sub.className = "fam-sub";
+    const bits = [REL_LABELS[m.relationship] || m.relationship];
+    if (m.sex) bits.push(m.sex);
+    bits.push(`${m.report_count} report${m.report_count === 1 ? "" : "s"}`);
+    sub.textContent = bits.join(" · ");
+    left.append(nm, sub);
+    const acts = document.createElement("div");
+    acts.className = "fam-actions";
+    const view = document.createElement("button");
+    view.type = "button"; view.className = "secondary small-btn"; view.textContent = "View";
+    view.addEventListener("click", () => selectMember(m.id));
+    const edit = document.createElement("button");
+    edit.type = "button"; edit.className = "secondary small-btn"; edit.textContent = "Edit";
+    edit.addEventListener("click", () => openMemberModal(m.id));
+    const del = document.createElement("button");
+    del.type = "button"; del.className = "secondary small-btn"; del.textContent = "Remove";
+    del.addEventListener("click", () => deleteMember(m.id));
+    acts.append(view, edit, del);
+    li.append(left, acts);
+    ul.appendChild(li);
+  }
+}
+
+function renderUploadMemberSelect() {
+  const sel = $("upload-member");
+  sel.innerHTML = "";
+  const meLabel = currentUser && currentUser.name ? `Me (${currentUser.name.split(" ")[0]})` : "Me";
+  sel.appendChild(new Option(meLabel, ""));
+  for (const m of familyMembers) {
+    sel.appendChild(new Option(`${m.name} (${REL_LABELS[m.relationship] || m.relationship})`, String(m.id)));
+  }
+  sel.value = selectedMemberId == null ? "" : String(selectedMemberId);
+}
+
+async function selectMember(id) {
+  selectedMemberId = id == null ? null : Number(id);
+  if (selectedMemberId == null) localStorage.removeItem(MEMBER_KEY);
+  else localStorage.setItem(MEMBER_KEY, String(selectedMemberId));
+  renderMemberChips();
+  renderUploadMemberSelect();
+  switchTab("dashboard");
+  await refreshProfileData();
+}
+
+async function refreshProfileData() {
+  lastReportId = null;
+  lastResults = null;
+  lastAiExplanation = null;
+  dashboardHasData = false;
+  clearChat();
+  $("results-groups").innerHTML = "";
+  $("ai-panel").classList.add("hidden");
+  await loadHistory();
+  await loadTrend();
+  await loadCompareReports();
+  if (reportIds.length) {
+    try { await loadReport(reportIds[0]); } catch { /* dashboard stays empty */ }
+  } else {
+    refreshDashboardPanels();
+  }
+}
+
+function openMemberModal(editId) {
+  editingMemberId = editId || null;
+  const m = editId ? familyMembers.find((x) => x.id === editId) : null;
+  $("member-modal-title").textContent = m ? `Edit ${m.name}` : "Add family member";
+  $("mm-name").value = m ? m.name : "";
+  $("mm-rel").value = m ? m.relationship : "other";
+  $("mm-sex").value = m && m.sex ? m.sex : "";
+  $("mm-dob").value = m && m.date_of_birth ? m.date_of_birth : "";
+  $("member-modal").classList.remove("hidden");
+  $("mm-name").focus();
+}
+
+function closeMemberModal() {
+  $("member-modal").classList.add("hidden");
+  editingMemberId = null;
+}
+
+async function saveMember() {
+  const name = $("mm-name").value.trim();
+  if (!name) { alert("Please enter a name."); return; }
+  const body = {
+    name,
+    relationship: $("mm-rel").value,
+    sex: $("mm-sex").value || null,
+    date_of_birth: $("mm-dob").value || null,
+  };
+  try {
+    const url = editingMemberId ? `/api/family/${editingMemberId}` : "/api/family";
+    const res = await api(url, {
+      method: editingMemberId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    closeMemberModal();
+    await loadFamily();
+  } catch (err) {
+    alert(`Could not save: ${err.message}`);
+  }
+}
+
+async function deleteMember(id) {
+  const m = familyMembers.find((x) => x.id === id);
+  const n = m ? m.report_count : 0;
+  if (!confirm(`Remove ${m ? m.name : "this member"}${n ? ` and their ${n} report${n === 1 ? "" : "s"}` : ""}? This cannot be undone.`)) return;
+  const res = await api(`/api/family/${id}`, { method: "DELETE" });
+  if (!res.ok) { alert("Could not remove this member."); return; }
+  if (selectedMemberId === id) await selectMember(null);
+  else await loadFamily();
+}
+
+$("family-add-btn").addEventListener("click", () => openMemberModal(null));
+$("mm-save").addEventListener("click", saveMember);
+$("mm-cancel").addEventListener("click", closeMemberModal);
+$("member-modal").addEventListener("click", (e) => {
+  if (e.target === $("member-modal")) closeMemberModal();
+});

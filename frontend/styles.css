@@ -273,3 +273,78 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
   .auth-view { align-items: flex-start; }
   .dash-head { flex-direction: column; align-items: stretch; }
 }
+
+/* ---- Family profiles ---- */
+.member-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 2px;
+  flex-wrap: wrap;
+}
+.member-strip-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+.member-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.chip-add { border-style: dashed; color: var(--muted); }
+.member-select {
+  width: 100%;
+  margin: 4px 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 14px;
+}
+.field-label { display: block; margin: 12px 0 4px; font-size: 13px; font-weight: 600; }
+.section-head { margin: 22px 0 4px; font-size: 16px; }
+.family-list { list-style: none; padding: 0; margin: 8px 0 12px; display: grid; gap: 8px; }
+.family-list li {
+  display: flex; align-items: center; justify-content: space-between;
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+  background: var(--panel);
+}
+.fam-name { font-weight: 600; }
+.fam-sub { color: var(--muted); font-size: 12px; }
+.fam-actions { display: flex; gap: 6px; }
+.profile-logout-row { margin-top: 18px; }
+
+/* ---- Modal ---- */
+.modal {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(2, 8, 20, 0.7);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  width: min(420px, 100%);
+  display: grid; gap: 2px;
+}
+.modal-card h3 { margin: 0 0 6px; }
+.modal-card input, .modal-card select {
+  width: 100%; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  font-size: 14px;
+}
+.modal-actions { margin-top: 14px; }

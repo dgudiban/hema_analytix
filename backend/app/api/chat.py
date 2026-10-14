@@ -22,8 +22,17 @@ def chat(
     user: User = Depends(get_current_user),
 ):
     history = [m.model_dump() for m in body.history] if body.history else None
+    if body.member_id is not None:
+        from app.api.family import _owned_member
+
+        _owned_member(db, body.member_id, user)
     return chat_service.answer_question(
-        body.message, db, report_id=body.report_id, history=history, user_id=user.id
+        body.message,
+        db,
+        report_id=body.report_id,
+        history=history,
+        user_id=user.id,
+        member_id=body.member_id,
     )
 
 

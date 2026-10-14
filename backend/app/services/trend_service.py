@@ -32,10 +32,13 @@ def _direction(values: list[float]) -> str:
     return "improving" if change > 0 else "declining"
 
 
-def get_trend(db, biomarker_id: str, user_id: int | None = None) -> dict | None:
+def get_trend(
+    db, biomarker_id: str, user_id: int | None = None, member_id: int | None = None
+) -> dict | None:
     """Trend for *biomarker_id* across the patient's reports, oldest first.
 
     When *user_id* is given, only that patient's reports are considered.
+    *member_id* scopes to one family profile (None = the account owner).
     Returns None when the biomarker has no stored results.
     """
     q = (
@@ -45,6 +48,10 @@ def get_trend(db, biomarker_id: str, user_id: int | None = None) -> dict | None:
     )
     if user_id is not None:
         q = q.filter(Report.user_id == user_id)
+    if member_id is None:
+        q = q.filter(Report.member_id.is_(None))
+    else:
+        q = q.filter(Report.member_id == member_id)
     rows = q.order_by(Report.report_date, Report.id).all()
     if not rows:
         return None

@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import auth, biomarkers, chat, reports
+from app.api import auth, biomarkers, chat, family, reports
 from app.models.db import engine, ensure_columns
 from app.models.entities import Base  # noqa: F401  (registers the tables)
 from app.utils.paths import project_root
@@ -35,6 +35,7 @@ app.include_router(auth.router, prefix="/api/auth")
 app.include_router(reports.router, prefix="/api/reports")
 app.include_router(biomarkers.router, prefix="/api/biomarkers")
 app.include_router(chat.router, prefix="/api/chat")
+app.include_router(family.router, prefix="/api/family")
 
 
 @app.get("/api/health")

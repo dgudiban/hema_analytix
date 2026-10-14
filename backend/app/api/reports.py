@@ -6,10 +6,11 @@ patient's own reports — no cross-account data is reachable.
 from datetime import date
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.api.family import _owned_member
 from app.models.db import get_db
 from app.models.entities import Report, Result, User
 from app.schemas.dto import (
@@ -45,6 +46,7 @@ def _owned_report(db: Session, report_id: int, user: User) -> Report:
 @router.post("/upload", response_model=UploadResponse)
 async def upload_report(
     file: UploadFile = File(...),
+    member_id: int | None = Form(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -53,6 +55,9 @@ async def upload_report(
         raise HTTPException(
             status_code=400, detail="Only PDF and image files (JPG, PNG) are accepted."
         )
+    # Validate the family profile scope before ingesting anything.
+    if member_id is not None:
+        _owned_member(db, member_id, user)
     try:
         saved_path = pdf_service.save_upload(file.filename, file.file)
     except ValueError as exc:
@@ -63,6 +68,7 @@ async def upload_report(
 
     report = Report(
         user_id=user.id,
+        member_id=member_id,
         filename=saved_path.name,
         raw_text=text,
         report_date=report_date,
@@ -142,10 +148,15 @@ def analyze_report(
 @router.get("/trends/{biomarker_id}", response_model=TrendResponse)
 def get_trend(
     biomarker_id: str,
+    member_id: int | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    trend = trend_service.get_trend(db, biomarker_id, user_id=user.id)
+    if member_id is not None:
+        _owned_member(db, member_id, user)
+    trend = trend_service.get_trend(
+        db, biomarker_id, user_id=user.id, member_id=member_id
+    )
     if trend is None:
         raise HTTPException(
             status_code=404, detail=f"No results found for {biomarker_id}."
@@ -155,14 +166,18 @@ def get_trend(
 
 @router.get("", response_model=list[ReportSummary])
 def list_reports(
-    db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    member_id: int | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    reports = (
-        db.query(Report)
-        .filter(Report.user_id == user.id)
-        .order_by(Report.id.desc())
-        .all()
-    )
+    if member_id is not None:
+        _owned_member(db, member_id, user)
+    q = db.query(Report).filter(Report.user_id == user.id)
+    if member_id is None:
+        q = q.filter(Report.member_id.is_(None))
+    else:
+        q = q.filter(Report.member_id == member_id)
+    reports = q.order_by(Report.id.desc()).all()
     return [
         {
             "id": r.id,
@@ -170,6 +185,7 @@ def list_reports(
             "report_date": r.report_date,
             "uploaded_at": r.uploaded_at,
             "result_count": len(r.results),
+            "member_id": r.member_id,
         }
         for r in reports
     ]
@@ -205,6 +221,11 @@ def compare_reports(
     """
     ra = _owned_report(db, a, user)
     rb = _owned_report(db, b, user)
+    if ra.member_id != rb.member_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Both reports must belong to the same profile to compare.",
+        )
 
     def side(r: Report) -> dict:
         return {"id": r.id, "filename": r.filename, "report_date": r.report_date}
@@ -260,4 +281,5 @@ def get_report(
         "results": results_out,
         "summary": analysis_service.summarize(results_out),
         "extraction_source": report.extraction_source or "rules",
+        "member_id": report.member_id,
     }

@@ -7,6 +7,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship as _rel
 
 from app.models.db import Base
 
@@ -25,6 +26,33 @@ class User(Base):
     reports = relationship(
         "Report", back_populates="user", cascade="all, delete-orphan"
     )
+    family_members = relationship(
+        "FamilyMember", back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class FamilyMember(Base):
+    """A family profile managed under a patient's account.
+
+    Each member has their own reports, trends, and chat context. ``sex``
+    and ``date_of_birth`` are captured because reference ranges depend on
+    both; they drive correct interpretation, not identity.
+    """
+
+    __tablename__ = "family_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    name = Column(String(120), nullable=False)
+    # "father" | "mother" | "spouse" | "son" | "daughter" | "other"
+    relationship = Column(String(20), nullable=False, default="other")
+    # "male" | "female" | "other" — used for reference-range interpretation.
+    sex = Column(String(10), nullable=True)
+    date_of_birth = Column(Date, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = _rel("User", back_populates="family_members")
+    reports = _rel("Report", back_populates="member", cascade="all, delete-orphan")
 
 
 class Report(Base):
@@ -34,6 +62,8 @@ class Report(Base):
     # Owner; nullable only so pre-login databases keep working — every
     # report created through the API always sets it.
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    # Family profile this report belongs to; NULL means the account owner.
+    member_id = Column(Integer, ForeignKey("family_members.id"), nullable=True, index=True)
     filename = Column(String(255), nullable=False)
     uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     # Date printed on the report (falls back to the upload date at capture).
@@ -48,6 +78,7 @@ class Report(Base):
         "Result", back_populates="report", cascade="all, delete-orphan"
     )
     user = relationship("User", back_populates="reports")
+    member = relationship("FamilyMember", back_populates="reports")
 
 
 class Result(Base):
