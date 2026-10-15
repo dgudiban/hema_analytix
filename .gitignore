@@ -11,3 +11,8 @@ venv/
 # BloodIQ runtime data (local only, never committed)
 data/bloodiq.db
 data/sample_reports/*.pdf
+data/sample_reports/*.PDF
+data/sample_reports/*.png
+data/sample_reports/*.PNG
+data/sample_reports/*.jpg
+data/sample_reports/*.jpeg
