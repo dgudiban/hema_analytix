@@ -43,8 +43,8 @@ def _by_id(parsed, biomarker_id):
 
 def test_spec_entries(spec):
     ids = [b["biomarker_id"] for b in spec]
-    assert len(spec) == 47
-    assert ids[0] == "BM001" and ids[-1] == "BM047"
+    assert len(spec) == 146
+    assert ids[0] == "BM001" and ids[-1] == "BM146"
     # No hard-coded reference-range keys anywhere in the spec entries.
     assert all("ref_low" not in b and "ref_high" not in b for b in spec)
     # No hard-coded reference-range keys anywhere in the spec entries.

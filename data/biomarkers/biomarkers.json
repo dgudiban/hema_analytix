@@ -698,6 +698,1454 @@
       "supports_trend": true,
       "calculation_type": "Direct measurement",
       "special_handling": "Use report-specific reference range; preserve original unit."
+    },
+    {
+      "biomarker_id": "BM048",
+      "standard_name": "Urine pH",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine pH",
+        "pH Urine",
+        "Urine PH"
+      ],
+      "typical_units": "",
+      "description": "Acidity/alkalinity of urine",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Dipstick or meter reading; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM049",
+      "standard_name": "Urine Specific Gravity",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Specific Gravity",
+        "Urine Specific Gravity",
+        "Sp Gr",
+        "SG Urine"
+      ],
+      "typical_units": "",
+      "description": "Concentration of dissolved particles in urine",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM050",
+      "standard_name": "Urine Protein",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Protein",
+        "Protein Urine",
+        "Proteinuria"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Protein excreted in urine; marker of kidney stress",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Dipstick bands are ordinal; preserve the printed value as-is."
+    },
+    {
+      "biomarker_id": "BM051",
+      "standard_name": "Urine Glucose",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Glucose",
+        "Glucose Urine",
+        "Glycosuria"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Glucose spilling into urine",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Dipstick bands are ordinal; preserve the printed value as-is."
+    },
+    {
+      "biomarker_id": "BM052",
+      "standard_name": "Urine Ketones",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Ketones",
+        "Ketones Urine",
+        "Ketone Bodies Urine"
+      ],
+      "typical_units": "",
+      "description": "Ketone bodies in urine",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Dipstick bands are ordinal (negative/trace/small/moderate/large)."
+    },
+    {
+      "biomarker_id": "BM053",
+      "standard_name": "Urine Bilirubin",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Bilirubin",
+        "Bilirubin Urine"
+      ],
+      "typical_units": "",
+      "description": "Bilirubin detected in urine",
+      "supports_trend": false,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Dipstick qualitative result; do not trend numerically."
+    },
+    {
+      "biomarker_id": "BM054",
+      "standard_name": "Urine Urobilinogen",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Urobilinogen",
+        "Urobilinogen Urine"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Urobilinogen level in urine",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM055",
+      "standard_name": "Urine Blood",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Blood",
+        "Blood Urine",
+        "Hematuria"
+      ],
+      "typical_units": "",
+      "description": "Blood detected in urine",
+      "supports_trend": false,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Dipstick qualitative result; do not trend numerically."
+    },
+    {
+      "biomarker_id": "BM056",
+      "standard_name": "Urine Nitrite",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Nitrite",
+        "Nitrite Urine",
+        "Nitrites"
+      ],
+      "typical_units": "",
+      "description": "Nitrite in urine; bacterial marker",
+      "supports_trend": false,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Qualitative result; do not trend numerically."
+    },
+    {
+      "biomarker_id": "BM057",
+      "standard_name": "Urine Leukocyte Esterase",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Leukocyte Esterase",
+        "Leukocyte Esterase Urine",
+        "LE Urine"
+      ],
+      "typical_units": "",
+      "description": "White-cell enzyme in urine; inflammation marker",
+      "supports_trend": false,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Qualitative result; do not trend numerically."
+    },
+    {
+      "biomarker_id": "BM058",
+      "standard_name": "Urine Calcium",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Calcium",
+        "Calcium Urine",
+        "24h Urine Calcium"
+      ],
+      "typical_units": "mg/24h",
+      "description": "Calcium excreted in urine over 24 hours",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM059",
+      "standard_name": "Urine Phosphate",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Phosphate",
+        "Phosphate Urine",
+        "Phosphorus Urine"
+      ],
+      "typical_units": "mg/24h",
+      "description": "Phosphate excreted in urine over 24 hours",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM060",
+      "standard_name": "Microalbumin/Creatinine Ratio",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Microalbumin Creatinine Ratio",
+        "Albumin Creatinine Ratio",
+        "ACR",
+        "Microalbumin/Cr"
+      ],
+      "typical_units": "mg/g",
+      "description": "Urine albumin normalized to creatinine; early kidney-damage screen",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Key diabetes kidney screen; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM061",
+      "standard_name": "Urine Osmolality",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Osmolality",
+        "Osmolality Urine"
+      ],
+      "typical_units": "mOsm/kg",
+      "description": "Concentration of urine solutes",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM062",
+      "standard_name": "Urine Epithelial Cells",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Epithelial Cells",
+        "Epithelial Cells Urine"
+      ],
+      "typical_units": "/hpf",
+      "description": "Epithelial cells seen on urine microscopy",
+      "supports_trend": false,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Microscopy ordinal result (rare/few/moderate/many); do not trend numerically."
+    },
+    {
+      "biomarker_id": "BM063",
+      "standard_name": "Urine Mucus",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Mucus",
+        "Mucus Urine"
+      ],
+      "typical_units": "",
+      "description": "Mucus threads seen on urine microscopy",
+      "supports_trend": false,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Microscopy ordinal result; do not trend numerically."
+    },
+    {
+      "biomarker_id": "BM064",
+      "standard_name": "Urine Crystals",
+      "category": "Urinalysis",
+      "common_aliases": [
+        "Urine Crystals",
+        "Crystals Urine"
+      ],
+      "typical_units": "",
+      "description": "Crystals seen on urine microscopy",
+      "supports_trend": false,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Microscopy descriptive result; do not trend numerically."
+    },
+    {
+      "biomarker_id": "BM065",
+      "standard_name": "Fecal Calprotectin",
+      "category": "Stool",
+      "common_aliases": [
+        "Calprotectin",
+        "Fecal Calprotectin",
+        "Stool Calprotectin"
+      ],
+      "typical_units": "µg/g",
+      "description": "Intestinal inflammation marker in stool",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM066",
+      "standard_name": "Fecal Occult Blood",
+      "category": "Stool",
+      "common_aliases": [
+        "FOBT",
+        "Fecal Occult Blood",
+        "Occult Blood Stool",
+        "FIT Test"
+      ],
+      "typical_units": "",
+      "description": "Hidden blood in stool; colorectal screen",
+      "supports_trend": false,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Qualitative result; do not trend numerically."
+    },
+    {
+      "biomarker_id": "BM067",
+      "standard_name": "Fecal Elastase",
+      "category": "Stool",
+      "common_aliases": [
+        "Elastase",
+        "Fecal Elastase",
+        "Stool Elastase",
+        "Pancreatic Elastase"
+      ],
+      "typical_units": "µg/g",
+      "description": "Pancreatic enzyme output marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM068",
+      "standard_name": "Fecal Chymotrypsin",
+      "category": "Stool",
+      "common_aliases": [
+        "Chymotrypsin",
+        "Fecal Chymotrypsin",
+        "Stool Chymotrypsin"
+      ],
+      "typical_units": "U/g",
+      "description": "Pancreatic digestive enzyme in stool",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM069",
+      "standard_name": "Sperm Concentration",
+      "category": "Semen",
+      "common_aliases": [
+        "Sperm Count",
+        "Sperm Concentration",
+        "Sperm Density"
+      ],
+      "typical_units": "million/mL",
+      "description": "Number of sperm per milliliter of semen",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM070",
+      "standard_name": "Sperm Motility",
+      "category": "Semen",
+      "common_aliases": [
+        "Motility",
+        "Sperm Motility",
+        "Progressive Motility"
+      ],
+      "typical_units": "%",
+      "description": "Share of moving sperm",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM071",
+      "standard_name": "Sperm Morphology",
+      "category": "Semen",
+      "common_aliases": [
+        "Morphology",
+        "Sperm Morphology",
+        "Normal Forms"
+      ],
+      "typical_units": "%",
+      "description": "Share of normally shaped sperm",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM072",
+      "standard_name": "ACTH",
+      "category": "Hormones",
+      "common_aliases": [
+        "ACTH",
+        "Adrenocorticotropic Hormone",
+        "Corticotropin"
+      ],
+      "typical_units": "pg/mL",
+      "description": "Pituitary hormone driving cortisol release",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Time-of-day matters; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM073",
+      "standard_name": "Aldosterone",
+      "category": "Hormones",
+      "common_aliases": [
+        "Aldosterone"
+      ],
+      "typical_units": "ng/dL",
+      "description": "Adrenal hormone regulating salt and blood pressure",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM074",
+      "standard_name": "Cortisol",
+      "category": "Hormones",
+      "common_aliases": [
+        "Cortisol",
+        "Serum Cortisol"
+      ],
+      "typical_units": "µg/dL",
+      "description": "Adrenal stress hormone",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Time-of-day matters; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM075",
+      "standard_name": "DHEA-S",
+      "category": "Hormones",
+      "common_aliases": [
+        "DHEA-S",
+        "DHEA Sulfate",
+        "Dehydroepiandrosterone Sulfate"
+      ],
+      "typical_units": "µg/dL",
+      "description": "Adrenal androgen precursor",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Age- and sex-dependent; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM076",
+      "standard_name": "Testosterone",
+      "category": "Hormones",
+      "common_aliases": [
+        "Testosterone",
+        "Total Testosterone"
+      ],
+      "typical_units": "ng/dL",
+      "description": "Primary male sex hormone",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Sex-dependent; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM077",
+      "standard_name": "Estradiol",
+      "category": "Hormones",
+      "common_aliases": [
+        "Estradiol",
+        "Estrogen",
+        "E2"
+      ],
+      "typical_units": "pg/mL",
+      "description": "Primary estrogen hormone",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Cycle/menopause-dependent; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM078",
+      "standard_name": "Progesterone",
+      "category": "Hormones",
+      "common_aliases": [
+        "Progesterone"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Ovarian hormone of the menstrual cycle and pregnancy",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Cycle/pregnancy-dependent; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM079",
+      "standard_name": "Prolactin",
+      "category": "Hormones",
+      "common_aliases": [
+        "Prolactin",
+        "PRL"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Pituitary hormone for lactation",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM080",
+      "standard_name": "LH",
+      "category": "Hormones",
+      "common_aliases": [
+        "LH",
+        "Luteinizing Hormone"
+      ],
+      "typical_units": "mIU/mL",
+      "description": "Pituitary reproductive hormone",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Cycle-dependent; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM081",
+      "standard_name": "FSH",
+      "category": "Hormones",
+      "common_aliases": [
+        "FSH",
+        "Follicle-Stimulating Hormone"
+      ],
+      "typical_units": "mIU/mL",
+      "description": "Pituitary reproductive hormone",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Cycle/menopause-dependent; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM082",
+      "standard_name": "AMH",
+      "category": "Hormones",
+      "common_aliases": [
+        "AMH",
+        "Anti-Mullerian Hormone",
+        "Anti-Müllerian Hormone"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Ovarian reserve marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM083",
+      "standard_name": "PTH",
+      "category": "Hormones",
+      "common_aliases": [
+        "PTH",
+        "Parathyroid Hormone",
+        "Intact PTH"
+      ],
+      "typical_units": "pg/mL",
+      "description": "Calcium-regulating parathyroid hormone",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM084",
+      "standard_name": "Calcitonin",
+      "category": "Hormones",
+      "common_aliases": [
+        "Calcitonin"
+      ],
+      "typical_units": "pg/mL",
+      "description": "Thyroid C-cell hormone; medullary thyroid marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM085",
+      "standard_name": "17-Hydroxyprogesterone",
+      "category": "Hormones",
+      "common_aliases": [
+        "17-Hydroxyprogesterone",
+        "17-OHP",
+        "17 OH Progesterone"
+      ],
+      "typical_units": "ng/dL",
+      "description": "Adrenal steroid pathway marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM086",
+      "standard_name": "SHBG",
+      "category": "Hormones",
+      "common_aliases": [
+        "SHBG",
+        "Sex Hormone Binding Globulin"
+      ],
+      "typical_units": "nmol/L",
+      "description": "Protein binding sex hormones in blood",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM087",
+      "standard_name": "Renin",
+      "category": "Hormones",
+      "common_aliases": [
+        "Renin",
+        "Plasma Renin"
+      ],
+      "typical_units": "ng/mL/h",
+      "description": "Kidney enzyme starting blood-pressure regulation",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Posture/salt-dependent; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM088",
+      "standard_name": "Troponin I",
+      "category": "Cardiac",
+      "common_aliases": [
+        "Troponin I",
+        "Troponin",
+        "cTnI",
+        "High Sensitivity Troponin"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Heart-muscle injury marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Assay-dependent cutoffs; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM089",
+      "standard_name": "NT-proBNP",
+      "category": "Cardiac",
+      "common_aliases": [
+        "NT-proBNP",
+        "NT proBNP",
+        "ProBNP"
+      ],
+      "typical_units": "pg/mL",
+      "description": "Heart-failure stretch marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Age-dependent; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM090",
+      "standard_name": "Creatine Kinase",
+      "category": "Cardiac / Muscle",
+      "common_aliases": [
+        "CK",
+        "Creatine Kinase",
+        "CPK",
+        "Creatine Phosphokinase"
+      ],
+      "typical_units": "U/L",
+      "description": "Muscle-damage enzyme",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM091",
+      "standard_name": "LDH",
+      "category": "Enzymes",
+      "common_aliases": [
+        "LDH",
+        "Lactate Dehydrogenase"
+      ],
+      "typical_units": "U/L",
+      "description": "Tissue-turnover enzyme",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM092",
+      "standard_name": "PT/INR",
+      "category": "Coagulation",
+      "common_aliases": [
+        "PT INR",
+        "Prothrombin Time",
+        "INR",
+        "PT/INR"
+      ],
+      "typical_units": "",
+      "description": "Blood clotting time standardized as INR",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Therapeutic target depends on indication; use report range."
+    },
+    {
+      "biomarker_id": "BM093",
+      "standard_name": "PTT",
+      "category": "Coagulation",
+      "common_aliases": [
+        "PTT",
+        "Partial Thromboplastin Time",
+        "aPTT",
+        "APTT"
+      ],
+      "typical_units": "sec",
+      "description": "Intrinsic clotting pathway time",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM094",
+      "standard_name": "D-Dimer",
+      "category": "Coagulation",
+      "common_aliases": [
+        "D-Dimer",
+        "D Dimer",
+        "DDimer"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Clot-breakdown fragment; clot screen",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Assay-dependent cutoff; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM095",
+      "standard_name": "Fibrinogen",
+      "category": "Coagulation",
+      "common_aliases": [
+        "Fibrinogen"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Clotting protein made by the liver",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM096",
+      "standard_name": "Protein C",
+      "category": "Coagulation",
+      "common_aliases": [
+        "Protein C"
+      ],
+      "typical_units": "%",
+      "description": "Natural anticoagulant protein activity",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM097",
+      "standard_name": "Protein S",
+      "category": "Coagulation",
+      "common_aliases": [
+        "Protein S",
+        "Free Protein S"
+      ],
+      "typical_units": "%",
+      "description": "Natural anticoagulant protein activity",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM098",
+      "standard_name": "C-Peptide",
+      "category": "Diabetes",
+      "common_aliases": [
+        "C-Peptide",
+        "C Peptide",
+        "Connecting Peptide"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Insulin-production marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM099",
+      "standard_name": "Procalcitonin",
+      "category": "Infection",
+      "common_aliases": [
+        "Procalcitonin",
+        "PCT"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Bacterial-infection marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM100",
+      "standard_name": "Haptoglobin",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Haptoglobin",
+        "HP"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Hemoglobin-scavenging protein; hemolysis marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM101",
+      "standard_name": "Complement C3",
+      "category": "Immune",
+      "common_aliases": [
+        "C3",
+        "Complement C3"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Immune-system complement protein",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM102",
+      "standard_name": "Complement C4",
+      "category": "Immune",
+      "common_aliases": [
+        "C4",
+        "Complement C4"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Immune-system complement protein",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM103",
+      "standard_name": "CD4 Count",
+      "category": "Immune",
+      "common_aliases": [
+        "CD4",
+        "CD4 Count",
+        "CD4 Lymphocyte Count"
+      ],
+      "typical_units": "cells/µL",
+      "description": "Helper T-cell count; immune status marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM104",
+      "standard_name": "Total IgE",
+      "category": "Immune",
+      "common_aliases": [
+        "IgE",
+        "Total IgE",
+        "Immunoglobulin E"
+      ],
+      "typical_units": "IU/mL",
+      "description": "Allergy-related antibody level",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM105",
+      "standard_name": "Rheumatoid Factor",
+      "category": "Autoimmune",
+      "common_aliases": [
+        "RF",
+        "Rheumatoid Factor"
+      ],
+      "typical_units": "IU/mL",
+      "description": "Autoantibody linked to rheumatoid arthritis",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM106",
+      "standard_name": "Anti-CCP",
+      "category": "Autoimmune",
+      "common_aliases": [
+        "CCP",
+        "Anti-CCP",
+        "Anti CCP",
+        "Cyclic Citrullinated Peptide"
+      ],
+      "typical_units": "U/mL",
+      "description": "Rheumatoid arthritis autoantibody",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM107",
+      "standard_name": "ANA",
+      "category": "Autoimmune",
+      "common_aliases": [
+        "ANA",
+        "Antinuclear Antibody"
+      ],
+      "typical_units": "titer",
+      "description": "Antinuclear antibody screen titer",
+      "supports_trend": false,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Titer + pattern result; do not trend numerically."
+    },
+    {
+      "biomarker_id": "BM108",
+      "standard_name": "Free T3",
+      "category": "Thyroid",
+      "common_aliases": [
+        "Free T3",
+        "FT3",
+        "Free Triiodothyronine"
+      ],
+      "typical_units": "pg/mL",
+      "description": "Active unbound thyroid hormone",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM109",
+      "standard_name": "Total T3",
+      "category": "Thyroid",
+      "common_aliases": [
+        "Total T3",
+        "T3",
+        "Triiodothyronine"
+      ],
+      "typical_units": "ng/dL",
+      "description": "Total triiodothyronine in blood",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM110",
+      "standard_name": "TPO Antibody",
+      "category": "Thyroid",
+      "common_aliases": [
+        "TPOAb",
+        "TPO Antibody",
+        "Anti-TPO",
+        "Thyroid Peroxidase Antibody"
+      ],
+      "typical_units": "IU/mL",
+      "description": "Autoimmune thyroid antibody",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM111",
+      "standard_name": "Thyroglobulin Antibody",
+      "category": "Thyroid",
+      "common_aliases": [
+        "TgAb",
+        "Thyroglobulin Antibody",
+        "Anti-Thyroglobulin"
+      ],
+      "typical_units": "IU/mL",
+      "description": "Autoimmune thyroid antibody",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM112",
+      "standard_name": "Thyroglobulin",
+      "category": "Thyroid",
+      "common_aliases": [
+        "Thyroglobulin",
+        "Tg"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Thyroid protein; cancer follow-up marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM113",
+      "standard_name": "CA 19-9",
+      "category": "Tumor Markers / Immunology",
+      "common_aliases": [
+        "CA 19-9",
+        "CA19-9",
+        "CA 199"
+      ],
+      "typical_units": "U/mL",
+      "description": "Pancreatic/gastrointestinal tumor marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM114",
+      "standard_name": "CA-125",
+      "category": "Tumor Markers / Immunology",
+      "common_aliases": [
+        "CA-125",
+        "CA125"
+      ],
+      "typical_units": "U/mL",
+      "description": "Ovarian tumor marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM115",
+      "standard_name": "CEA",
+      "category": "Tumor Markers / Immunology",
+      "common_aliases": [
+        "CEA",
+        "Carcinoembryonic Antigen"
+      ],
+      "typical_units": "ng/mL",
+      "description": "Colorectal tumor marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Smoking raises baseline; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM116",
+      "standard_name": "Beta-2 Microglobulin",
+      "category": "Tumor Markers / Immunology",
+      "common_aliases": [
+        "B2M",
+        "Beta-2 Microglobulin",
+        "Beta 2 Microglobulin"
+      ],
+      "typical_units": "mg/L",
+      "description": "Cell-turnover tumor marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM117",
+      "standard_name": "Kappa Free Light Chains",
+      "category": "Tumor Markers / Immunology",
+      "common_aliases": [
+        "Kappa Free Light Chains",
+        "Kappa FLC",
+        "Free Kappa"
+      ],
+      "typical_units": "mg/L",
+      "description": "Plasma-cell disorder marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM118",
+      "standard_name": "Lambda Free Light Chains",
+      "category": "Tumor Markers / Immunology",
+      "common_aliases": [
+        "Lambda Free Light Chains",
+        "Lambda FLC",
+        "Free Lambda"
+      ],
+      "typical_units": "mg/L",
+      "description": "Plasma-cell disorder marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM119",
+      "standard_name": "Neutrophils",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Neutrophils",
+        "Neutrophil %",
+        "NEUT",
+        "Segs"
+      ],
+      "typical_units": "%",
+      "description": "Most common infection-fighting white cells",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM120",
+      "standard_name": "Lymphocytes",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Lymphocytes",
+        "Lymphocyte %",
+        "LYMPH"
+      ],
+      "typical_units": "%",
+      "description": "Viral-defense white blood cells",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM121",
+      "standard_name": "Monocytes",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Monocytes",
+        "Monocyte %",
+        "MONO"
+      ],
+      "typical_units": "%",
+      "description": "Tissue-cleanup white blood cells",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM122",
+      "standard_name": "Eosinophils",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Eosinophils",
+        "Eosinophil %",
+        "EOS"
+      ],
+      "typical_units": "%",
+      "description": "Allergy/parasite white blood cells",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM123",
+      "standard_name": "Basophils",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "Basophils",
+        "Basophil %",
+        "BASO"
+      ],
+      "typical_units": "%",
+      "description": "Inflammatory white blood cells",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM124",
+      "standard_name": "MPV",
+      "category": "CBC / Hematology",
+      "common_aliases": [
+        "MPV",
+        "Mean Platelet Volume"
+      ],
+      "typical_units": "fL",
+      "description": "Average platelet size",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM125",
+      "standard_name": "Arterial pH",
+      "category": "Blood Gas",
+      "common_aliases": [
+        "Arterial pH",
+        "ABG pH"
+      ],
+      "typical_units": "",
+      "description": "Blood acidity from arterial sample",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM126",
+      "standard_name": "Arterial pCO2",
+      "category": "Blood Gas",
+      "common_aliases": [
+        "pCO2",
+        "Arterial pCO2",
+        "ABG pCO2"
+      ],
+      "typical_units": "mmHg",
+      "description": "Arterial carbon dioxide pressure",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM127",
+      "standard_name": "Arterial pO2",
+      "category": "Blood Gas",
+      "common_aliases": [
+        "pO2",
+        "Arterial pO2",
+        "ABG pO2",
+        "PaO2"
+      ],
+      "typical_units": "mmHg",
+      "description": "Arterial oxygen pressure",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM128",
+      "standard_name": "CSF Protein",
+      "category": "Cerebrospinal Fluid",
+      "common_aliases": [
+        "CSF Protein",
+        "Cerebrospinal Fluid Protein"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Protein in cerebrospinal fluid",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM129",
+      "standard_name": "CSF Glucose",
+      "category": "Cerebrospinal Fluid",
+      "common_aliases": [
+        "CSF Glucose",
+        "Cerebrospinal Fluid Glucose"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Glucose in cerebrospinal fluid",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM130",
+      "standard_name": "CSF WBC",
+      "category": "Cerebrospinal Fluid",
+      "common_aliases": [
+        "CSF WBC",
+        "CSF White Blood Cells",
+        "CSF Cell Count"
+      ],
+      "typical_units": "/µL",
+      "description": "White cells in cerebrospinal fluid",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM131",
+      "standard_name": "Anion Gap",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "Anion Gap"
+      ],
+      "typical_units": "mEq/L",
+      "description": "Unmeasured-ion gap from electrolytes",
+      "supports_trend": true,
+      "calculation_type": "Calculated: Na - (Cl + HCO3)",
+      "special_handling": "Derived from the report's own electrolyte values."
+    },
+    {
+      "biomarker_id": "BM132",
+      "standard_name": "Ammonia",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "Ammonia",
+        "Blood Ammonia",
+        "NH3"
+      ],
+      "typical_units": "µmol/L",
+      "description": "Blood ammonia level",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM133",
+      "standard_name": "Serum Osmolality",
+      "category": "Metabolic / Electrolytes",
+      "common_aliases": [
+        "Serum Osmolality",
+        "Osmolality Serum"
+      ],
+      "typical_units": "mOsm/kg",
+      "description": "Solute concentration of blood serum",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM134",
+      "standard_name": "GGT",
+      "category": "Liver / Protein",
+      "common_aliases": [
+        "GGT",
+        "Gamma-GT",
+        "Gamma Glutamyl Transferase",
+        "Gamma-Glutamyl Transpeptidase"
+      ],
+      "typical_units": "U/L",
+      "description": "Liver/bile-duct enzyme",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM135",
+      "standard_name": "Globulin",
+      "category": "Liver / Protein",
+      "common_aliases": [
+        "Globulin",
+        "Serum Globulin"
+      ],
+      "typical_units": "g/dL",
+      "description": "Non-albumin blood proteins",
+      "supports_trend": true,
+      "calculation_type": "Calculated: Total Protein - Albumin",
+      "special_handling": "Derived from the report's own protein values."
+    },
+    {
+      "biomarker_id": "BM136",
+      "standard_name": "A/G Ratio",
+      "category": "Liver / Protein",
+      "common_aliases": [
+        "A/G Ratio",
+        "Albumin/Globulin Ratio",
+        "Albumin Globulin Ratio"
+      ],
+      "typical_units": "",
+      "description": "Albumin to globulin balance",
+      "supports_trend": true,
+      "calculation_type": "Calculated: Albumin / Globulin",
+      "special_handling": "Derived from the report's own protein values."
+    },
+    {
+      "biomarker_id": "BM137",
+      "standard_name": "Amylase",
+      "category": "Pancreatic",
+      "common_aliases": [
+        "Amylase",
+        "Serum Amylase"
+      ],
+      "typical_units": "U/L",
+      "description": "Pancreatic digestive enzyme",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM138",
+      "standard_name": "Lipase",
+      "category": "Pancreatic",
+      "common_aliases": [
+        "Lipase",
+        "Serum Lipase"
+      ],
+      "typical_units": "U/L",
+      "description": "Pancreatic fat-digesting enzyme",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM139",
+      "standard_name": "Ceruloplasmin",
+      "category": "Metabolic",
+      "common_aliases": [
+        "Ceruloplasmin"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Copper-carrying blood protein",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM140",
+      "standard_name": "Homocysteine",
+      "category": "Metabolic",
+      "common_aliases": [
+        "Homocysteine"
+      ],
+      "typical_units": "µmol/L",
+      "description": "Cardiovascular-risk amino acid",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM141",
+      "standard_name": "Methylmalonic Acid",
+      "category": "Vitamins / Nutrition",
+      "common_aliases": [
+        "MMA",
+        "Methylmalonic Acid",
+        "Methylmalonate"
+      ],
+      "typical_units": "nmol/L",
+      "description": "Functional B12-deficiency marker",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM142",
+      "standard_name": "Prealbumin",
+      "category": "Vitamins / Nutrition",
+      "common_aliases": [
+        "Prealbumin",
+        "Transthyretin"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Short-term nutrition status protein",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM143",
+      "standard_name": "Sweat Chloride",
+      "category": "Other",
+      "common_aliases": [
+        "Sweat Chloride",
+        "Chloride Sweat Test"
+      ],
+      "typical_units": "mmol/L",
+      "description": "Sweat chloride; cystic fibrosis screen",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM144",
+      "standard_name": "Blood Lead",
+      "category": "Toxicology",
+      "common_aliases": [
+        "Lead",
+        "Blood Lead",
+        "Lead Level"
+      ],
+      "typical_units": "µg/dL",
+      "description": "Blood lead concentration",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
+    },
+    {
+      "biomarker_id": "BM145",
+      "standard_name": "Acetaminophen",
+      "category": "Toxicology",
+      "common_aliases": [
+        "Acetaminophen",
+        "Paracetamol",
+        "APAP"
+      ],
+      "typical_units": "µg/mL",
+      "description": "Acetaminophen drug level",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Timing post-dose matters; use report-specific range."
+    },
+    {
+      "biomarker_id": "BM146",
+      "standard_name": "Salicylates",
+      "category": "Toxicology",
+      "common_aliases": [
+        "Salicylates",
+        "Salicylate Level",
+        "Aspirin Level"
+      ],
+      "typical_units": "mg/dL",
+      "description": "Salicylate drug level",
+      "supports_trend": true,
+      "calculation_type": "Direct measurement",
+      "special_handling": "Use report-specific reference range."
     }
   ]
 }
