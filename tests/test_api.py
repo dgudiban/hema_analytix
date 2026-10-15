@@ -160,8 +160,8 @@ def test_upload_analyze_flow(upload_dir):
     assert wbc["ref_low"] == pytest.approx(4000.0)
     assert wbc["status"] == "NORMAL"
 
-    vitd = by_id["BM038"]
-    assert vitd["status"] == "unknown"  # no range printed on the report
+    vitd = by_id.get("BM038")
+    assert vitd is None  # no range printed -> dropped, never shown as "unknown"
 
     # AI is optional: with no GROQ_API_KEY/GEMINI_API_KEY and no Ollama, it must be null.
     assert analyzed["ai_explanation"] is None
@@ -175,7 +175,7 @@ def test_upload_analyze_flow(upload_dir):
     assert one.status_code == 200
     detail = one.json()
     assert detail["report_date"] == "2026-01-15"
-    assert len(detail["results"]) >= 3
+    assert len(detail["results"]) == 2  # Vitamin D dropped: no printed range
     assert all("biomarker_id" in r and "source" in r for r in detail["results"])
     # Phase 3/4: detail carries the computed summary and lab flags for the frontend.
     assert "Hemoglobin" in detail["summary"]
@@ -214,8 +214,7 @@ def test_compare_reports(upload_dir):
     assert by_name["Hemoglobin"]["b_value"] == pytest.approx(13.0)
     assert by_name["Total Cholesterol"]["change"] == "missing"
     assert by_name["Total Cholesterol"]["b_value"] is None
-    assert by_name["Vitamin D"]["change"] == "new"
-    assert by_name["Vitamin D"]["a_value"] is None
+    assert "Vitamin D" not in by_name  # dropped: no printed range on report B
     # Direction is never dressed up as better/worse.
     assert all(r["change"] in {"up", "down", "same", "new", "missing"} for r in data["rows"])
     # Cross-account comparison is unreachable.
@@ -233,12 +232,10 @@ def test_upload_analyze_with_calculated(upload_dir):
         ],
         filename="lipids.pdf",
     )
+    # Calculated rows carry no report range, so they are dropped from results
+    # (product rule: nothing is ever shown as "unknown" / without a range).
     by_id = {r["biomarker_id"]: r for r in analyzed["results"]}
-    nh = by_id["BM031"]
-    assert nh["value"] == pytest.approx(175.0)
-    assert nh["source"] == "calculated"
-    assert "BM027" in nh["method"]
-    assert nh["status"] == "unknown"  # calculated rows have no report range
+    assert "BM031" not in by_id
 
 
 def test_trends_endpoint(upload_dir):

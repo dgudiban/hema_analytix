@@ -180,6 +180,11 @@ def extract_interpretation(text: str) -> str | None:
     return match.group(1).strip() or None
 
 
+def _norm_alias(s: str) -> str:
+    """Normalize a test-name line for exact alias comparison."""
+    return re.sub(r"\s+", " ", (s or "")).strip().lower()
+
+
 def _line_suffix(text: str, end: int) -> str:
     """Text from *end* to the end of the line (capped), where ranges live.
 
@@ -216,6 +221,42 @@ def parse_text(text: str, spec: list[dict]) -> list[dict]:
     def _names(bm: dict) -> list[str]:
         return [n for n in [bm["standard_name"], *bm["common_aliases"]] if n]
 
+    # Alias lookup for "next test's row" detection: many lab tables flatten
+    # to one cell per line (name / value / unit / range on separate lines),
+    # so the range hunt below may continue onto following lines — but must
+    # stop at the next test's row to never steal its range.
+    alias_lines = {_norm_alias(n) for bm in spec for n in _names(bm)}
+    lowered_aliases = sorted(
+        {n.lower() for bm in spec for n in _names(bm)}, key=len, reverse=True
+    )
+
+    def _is_next_test_row(line: str) -> bool:
+        low = _norm_alias(line)
+        if low in alias_lines:
+            return True  # the next test's name on its own line
+        return bool(re.search(r"\d", line)) and any(a in low for a in lowered_aliases)
+
+    def _search_window(end: int) -> str:
+        """Range/unit/flag hunt window after a value match.
+
+        Same-line suffix first (classic layout); when the table flattens to
+        one cell per line, continue onto the following lines (up to 4),
+        stopping at the next test's row.
+        """
+        tail = text[end:]
+        nl = tail.find("\n")
+        first = tail[:nl] if nl != -1 else tail
+        rest = tail[nl + 1 :] if nl != -1 else ""
+        parts = [first]
+        for ln in rest.split("\n")[:4]:
+            s = ln.strip()
+            if not s:
+                continue
+            if _is_next_test_row(s):
+                break
+            parts.append(s)
+        return " ".join(parts)[:400]
+
     # Longest alias first, across all biomarkers, to avoid partial matches.
     jobs = [(len(alias), bm, alias) for bm in spec for alias in _names(bm)]
     jobs.sort(key=lambda job: -job[0])
@@ -234,7 +275,7 @@ def parse_text(text: str, spec: list[dict]) -> list[dict]:
             if value is None:
                 continue
             raw_unit = (match.group("unit") or "").strip()
-            suffix = _line_suffix(text, end)
+            suffix = _search_window(end)
             ref_low, ref_high, range_end = _parse_reference_range(suffix)
             unit = raw_unit or _unit_after_range(suffix, range_end) or bm["typical_units"]
             consumed.append((start, end))
@@ -278,7 +319,7 @@ def parse_text(text: str, spec: list[dict]) -> list[dict]:
                 "unit": raw_unit or bm["typical_units"],
                 "ref_low": ref_low,
                 "ref_high": ref_high,
-                "flag": _parse_flag(_line_suffix(text, match.end())),
+                "flag": _parse_flag(_search_window(match.end())),
             }
             break
 

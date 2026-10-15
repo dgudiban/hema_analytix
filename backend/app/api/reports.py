@@ -106,6 +106,10 @@ def analyze_report(
     normalized = normalize_service.normalize(parsed)
     with_calculated = normalize_service.add_calculated(normalized)
     analyzed = analysis_service.analyze(with_calculated)
+    # Product rule: there is no "no reference range" bucket. Tests whose
+    # reference range the report did not print (status "unknown") are dropped
+    # from the results instead of being listed without a range.
+    analyzed = [a for a in analyzed if a.get("status") != "unknown"]
 
     # Re-analysis replaces previous results (idempotent).
     db.query(Result).filter(Result.report_id == report.id).delete()
