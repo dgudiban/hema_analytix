@@ -42,14 +42,20 @@ HYBRID_SYSTEM = (
     "or dosages, or give emergency guidance. If asked for any of these, "
     "decline that specific request and give general educational information "
     "instead, advising the user to consult a healthcare professional. "
-    "Keep the answer concise and non-alarming."
+    "Keep the answer concise and non-alarming. "
+    "Write as short paragraphs and simple bullet lines in plain, friendly "
+    "words — never use markdown tables. For test results, write one line "
+    "per test, for example: 'Hemoglobin 13.2 g/dL — a little low (healthy "
+    "range 13.5–17.5).' The product is called LabIQ, never BloodIQ."
 )
 
 BASELINE_SYSTEM = (
     "You are a helpful assistant answering questions about blood test "
     "biomarkers. This is educational information, not medical advice. Never "
     "diagnose conditions, prescribe medication, or recommend treatments; "
-    "advise the user to consult a healthcare professional."
+    "advise the user to consult a healthcare professional. "
+    "Write as short paragraphs and simple bullet lines — never use markdown "
+    "tables. The product is called LabIQ, never BloodIQ."
 )
 
 # General answers for the single ask box when a question has no grounding in
@@ -60,7 +66,9 @@ GENERAL_SYSTEM = (
     "lab tests and health in plain, friendly language. This is educational "
     "information, not medical advice. Never diagnose conditions, prescribe "
     "medication, recommend treatments or dosages, or give emergency "
-    "guidance; advise the user to consult a healthcare professional."
+    "guidance; advise the user to consult a healthcare professional. "
+    "Write as short paragraphs and simple bullet lines — never use markdown "
+    "tables. The product is called LabIQ, never BloodIQ."
 )
 
 _FALLBACK_NO_LLM = (

@@ -768,22 +768,33 @@ function drawCompare(data) {
       dot(r.b_value, r.b_status, "later", "below") +
       `</div>${rt ? `<div class="tl-range muted">Healthy range: ${escapeHtml(rt)} ${escapeHtml(r.unit || "")}</div>` : ""}</div>`;
   };
+  // Absolute difference, shown with sensible precision: 4.2 → 4.3 reads
+  // "0.1", not a rounded percent. Sorting still uses the true percent
+  // change, so the biggest relative moves stay first.
+  const fmtDiff = (d) => {
+    const a = Math.abs(d);
+    if (a === 0) return "0";
+    if (a >= 100) return a.toFixed(0);
+    if (a >= 10) return a.toFixed(1).replace(/\.0$/, "");
+    if (a >= 1) return a.toFixed(1);
+    return a.toFixed(2).replace(/0$/, "");
+  };
   const rowHTML = (r) => {
     const p = pct(r);
-    const arrow = p > 0 ? "↑" : p < 0 ? "↓" : "→";
-    // Displayed change stays inside 0–100; a "+" marks a move that really
-    // ran past 100% (sorting still uses the true change).
-    const pctText = `${Math.min(Math.abs(p), 100).toFixed(0)}${Math.abs(p) > 100 ? "+" : ""}%`;
+    const dirArrow = p > 0 ? "↑" : p < 0 ? "↓" : "→";
     let delta;
     if (r.a_value != null && r.b_value != null) {
-      // Abnormal → Normal is an improvement: green arrow, plain word.
-      // The arrow points the way the value actually moved (down for
-      // HbA1c, up for B12) — green is what says it got better.
+      const diff = fmtDiff(r.b_value - r.a_value);
+      // Arrows mean better/worse, not value direction — the dots on the
+      // track already show the actual values. Green up = improved,
+      // red down = worsened; anything else keeps a muted direction arrow.
       if (r.change !== "same" && abnormal(r.a_status) && r.b_status === "NORMAL") {
-        delta = `<strong><span class="tl-arrow improved">${arrow}</span> ${pctText} · Improved</strong>`;
+        delta = `<strong><span class="tl-arrow improved">↑</span> ${diff} · Improved</strong>`;
+      } else if (r.change !== "same" && r.a_status === "NORMAL" && abnormal(r.b_status)) {
+        delta = `<strong><span class="tl-arrow worsened">↓</span> ${diff} · Worsened</strong>`;
       } else {
         const v = verdict(r);
-        delta = `<strong>${arrow} ${pctText}</strong>${v ? ` · ${v}` : ""}`;
+        delta = `<strong><span class="tl-arrow">${dirArrow}</span> ${diff}</strong>${v ? ` · ${v}` : ""}`;
       }
     } else {
       delta = r.a_value == null ? "Only in the second report" : "Only in the first report";
@@ -1067,7 +1078,7 @@ function addChatBubble(role, text, opts = {}) {
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
   if (role === "user") { avatar.textContent = "👤"; }
-  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq4" alt="LabIQ" />'; }
+  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq5" alt="LabIQ" />'; }
   msg.appendChild(avatar);
 
   const body = document.createElement("div");
@@ -1114,7 +1125,7 @@ function addChatBubble(role, text, opts = {}) {
   if (opts.grounded === false) {
     const warn = document.createElement("span");
     warn.className = "chat-warn";
-    warn.textContent = "⚠ some numbers not found in your reports";
+    warn.textContent = "⚠ Some numbers in this answer weren't found in your reports — double-check them.";
     meta.appendChild(warn);
   }
   body.appendChild(meta);
@@ -1130,7 +1141,7 @@ function addThinking() {
   msg.className = "chat-msg assistant";
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
-  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq4" alt="LabIQ" />';
+  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq5" alt="LabIQ" />';
   msg.appendChild(avatar);
   const body = document.createElement("div");
   body.className = "chat-body";
