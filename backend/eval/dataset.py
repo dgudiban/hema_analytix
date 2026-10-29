@@ -1,4 +1,4 @@
-"""Synthetic evaluation dataset for BloodIQ.
+"""Synthetic evaluation dataset for LabIQ.
 
 Generates fixture lab-report PDFs with a known ground-truth manifest, so the
 extraction / normalization / classification pipeline can be scored

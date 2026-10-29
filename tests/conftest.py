@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
-_tmp = tempfile.mkdtemp(prefix="bloodiq_test_")
+_tmp = tempfile.mkdtemp(prefix="labiq_test_")
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
 
 _signup_counter = 0

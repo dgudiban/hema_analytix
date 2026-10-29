@@ -1,6 +1,6 @@
 """Regenerate data/biomarkers/biomarkers.json from the xlsx source of truth.
 
-The Excel file ``BloodIQ_Biomarker_Specification_v2.xlsx`` is the authoritative
+The Excel file ``LabIQ_Biomarker_Specification_v2.xlsx`` is the authoritative
 biomarker spec; this JSON is a build artifact. Re-run this script whenever the
 spreadsheet changes:
 
@@ -22,11 +22,11 @@ import openpyxl
 # utils/import_spec.py -> app -> backend -> project root (3 levels up).
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 BIOMARKER_DIR = PROJECT_ROOT / "data" / "biomarkers"
-XLSX_PATH = BIOMARKER_DIR / "BloodIQ_Biomarker_Specification_v2.xlsx"
+XLSX_PATH = BIOMARKER_DIR / "LabIQ_Biomarker_Specification_v2.xlsx"
 JSON_PATH = BIOMARKER_DIR / "biomarkers.json"
 
 DISCLAIMER = (
-    "BloodIQ is educational and is not a substitute for professional "
+    "LabIQ is educational and is not a substitute for professional "
     "medical advice. Always consult a qualified healthcare professional "
     "about your lab results."
 )

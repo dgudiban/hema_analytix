@@ -1,4 +1,4 @@
-"""Formal evaluation runner for BloodIQ.
+"""Formal evaluation runner for LabIQ.
 
 Scores, end to end and without human judgment:
   1. Extraction: detection precision/recall/F1 + field accuracy (value, unit,
@@ -368,7 +368,7 @@ def _write_report(out_dir: Path, metrics: dict) -> None:
     cht = metrics["chat"]["summary"]
 
     lines = [
-        "# BloodIQ Evaluation Report",
+        "# LabIQ Evaluation Report",
         "",
         f"Generated: {metrics['generated_at_utc']} UTC",
         f"LLM backend: hybrid={cht['hybrid_model'] or 'none (fallback)'} / "

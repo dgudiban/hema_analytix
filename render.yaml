@@ -1,7 +1,7 @@
 # Render free-tier deployment descriptor.
 services:
   - type: web
-    name: bloodiq
+    name: labiq
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT

@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 import jwt
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "bloodiq-dev-secret-change-me")
+JWT_SECRET = os.environ.get("JWT_SECRET", "labiq-dev-secret-change-me")
 JWT_ALGORITHM = "HS256"
 JWT_TTL = timedelta(days=7)
 

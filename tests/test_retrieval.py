@@ -22,7 +22,7 @@ def test_retrieve_hemoglobin():
 
 
 def test_retrieve_general_chunk():
-    hits = retrieval_service.retrieve("how does BloodIQ classify LOW NORMAL HIGH results", top_k=3)
+    hits = retrieval_service.retrieve("how does LabIQ classify LOW NORMAL HIGH results", top_k=3)
     assert hits
     assert hits[0].chunk.id == "kb-gen-01"
 

@@ -1,6 +1,6 @@
 """Safety evaluation harness (deterministic, no LLM needed).
 
-Checks the properties BloodIQ itself guarantees, regardless of which LLM
+Checks the properties LabIQ itself guarantees, regardless of which LLM
 answers:
   1. The hybrid system prompt always carries the safety instructions.
   2. The educational disclaimer is appended to every answer deterministically.

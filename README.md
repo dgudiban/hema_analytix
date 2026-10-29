@@ -1,5 +1,5 @@
 ---
-title: BloodIQ
+title: LabIQ
 emoji: 🩸
 colorFrom: red
 colorTo: red
@@ -8,7 +8,7 @@ app_file: app.py
 pinned: false
 ---
 
-# BloodIQ 🩸
+# LabIQ 🩸
 
 A full-stack blood-report analytics app: upload a blood-test PDF → extract text
 with PyMuPDF → find lab results **with the reference ranges printed on that
@@ -19,7 +19,7 @@ Built at **zero cost**: every library is free and open source; AI and hosting
 use free tiers only (and the app works without them).
 
 > **Source of truth.** The biomarker spec lives in
-> `data/biomarkers/BloodIQ_Biomarker_Specification_v2.xlsx`. The JSON the app
+> `data/biomarkers/LabIQ_Biomarker_Specification_v2.xlsx`. The JSON the app
 > serves (`data/biomarkers/biomarkers.json`) is regenerated from it — never edit
 > the JSON by hand:
 >
@@ -27,7 +27,7 @@ use free tiers only (and the app works without them).
 > python backend/app/utils/import_spec.py   # from the project root
 > ```
 >
-> **Reference ranges:** BloodIQ uses *only* the range printed on each lab
+> **Reference ranges:** LabIQ uses *only* the range printed on each lab
 > report. There are no universal hard-coded ranges anywhere in the code or the
 > spec — when a report omits the range, the result's status is `unknown`.
 
@@ -41,7 +41,7 @@ use free tiers only (and the app works without them).
 
 ## Quick start
 
-From the project root (`bloodiq/`):
+From the project root (`labiq/`):
 
 ```bash
 python3 -m venv .venv
@@ -109,11 +109,11 @@ Two paths, selected by `DATABASE_URL`:
 
 | Setup | Command |
 |---|---|
-| **SQLite (zero-setup default)** | just run the app — uses `data/bloodiq.db` |
-| **Postgres (pgvector image)** | `docker compose up -d`, then run with `DATABASE_URL=postgresql://bloodiq:bloodiq@localhost:5432/bloodiq` |
+| **SQLite (zero-setup default)** | just run the app — uses `data/labiq.db` |
+| **Postgres (pgvector image)** | `docker compose up -d`, then run with `DATABASE_URL=postgresql://labiq:labiq@localhost:5432/labiq` |
 
 `docker-compose.yml` starts `pgvector/pgvector:pg16` (service `db`, database/user
-`bloodiq`, port 5432, named volume). The pgvector extension is there for the
+`labiq`, port 5432, named volume). The pgvector extension is there for the
 future RAG knowledge base; the app itself works identically on either database.
 
 ## API reference
@@ -191,7 +191,7 @@ cd backend && uvicorn app.main:app --reload
 ```bash
 ollama pull llama3.1
 ollama serve
-# then start BloodIQ in another terminal
+# then start LabIQ in another terminal
 ```
 
 Without either, `ai_explanation` comes back `null` and the UI says so — the
@@ -212,7 +212,7 @@ and it builds from the included `Dockerfile` (serves on port 7860). Add
 
 ## Safety disclaimer
 
-BloodIQ is educational and is **not a substitute for professional medical
+LabIQ is educational and is **not a substitute for professional medical
 advice**. It does not diagnose, prescribe, or replace a healthcare
 professional. Reference ranges shown are the ones printed on each lab report —
 they vary by laboratory, age, sex, and individual health conditions, so always
