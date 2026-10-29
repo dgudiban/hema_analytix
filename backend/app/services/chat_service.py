@@ -1,6 +1,6 @@
 """Conversational layer: hybrid (deterministic + RAG + LLM) and LLM-only baseline.
 
-Hybrid pipeline (the BloodIQ architecture under evaluation):
+Hybrid pipeline (the LabIQ architecture under evaluation):
   1. Detect which biomarkers the question mentions (alias matching).
   2. Pull deterministic patient facts: the user's own results (value, unit,
      report-specific range, status) and trend direction for those biomarkers.
@@ -26,13 +26,13 @@ from app.services import llm_client, retrieval_service, trend_service
 from app.utils.spec import get_biomarkers
 
 DISCLAIMER = (
-    "BloodIQ is educational and is not a substitute for professional medical "
+    "LabIQ is educational and is not a substitute for professional medical "
     "advice. Always consult a qualified healthcare professional about your "
     "lab results."
 )
 
 HYBRID_SYSTEM = (
-    "You are BloodIQ's educational assistant. Answer the user's question "
+    "You are LabIQ's educational assistant. Answer the user's question "
     "using ONLY the PATIENT DATA and KNOWLEDGE excerpts provided below. "
     "Use the exact numbers from that context; do not invent or round new "
     "numbers, and do not bring in outside medical knowledge beyond what the "
@@ -191,7 +191,7 @@ def answer_question(
     """Hybrid grounded answer. Never raises for missing LLM (falls back)."""
     if not message.strip():
         return {
-            "answer": "Please ask a question about your blood reports.",
+            "answer": "Please ask a question about your lab reports.",
             "model": None,
             "mode": "hybrid",
             "sources": [],

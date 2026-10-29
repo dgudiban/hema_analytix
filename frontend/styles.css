@@ -1,15 +1,15 @@
-/* BloodIQ — Lab Intelligence theme (logo palette: royal blue / crimson / dark navy) */
+/* LabIQ — Lab Intelligence theme (logo palette: flask blue / deep navy) */
 :root {
-  --bg: #0a1628;
-  --sidebar: #081222;
-  --card: #12233d;
-  --card-soft: #0d1b31;
-  --border: #1e3a5f;
-  --text: #e9eff8;
-  --muted: #8fa3bd;
-  --accent: #2b8fd4;
-  --accent-soft: rgba(43, 143, 212, 0.14);
-  --accent-deep: #1a6aa5;
+  --bg: #101651;
+  --sidebar: #0c1140;
+  --card: #1a2066;
+  --card-soft: #141a52;
+  --border: #2a3180;
+  --text: #eef1ff;
+  --muted: #9aa3d6;
+  --accent: #0089ff;
+  --accent-soft: rgba(0, 137, 255, 0.14);
+  --accent-deep: #006fd1;
   --red: #d01a35;
   --red-soft: rgba(208, 26, 53, 0.13);
   --amber: #f5b301;
@@ -61,7 +61,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   padding: 2.5rem 1.5rem;
   background:
-    radial-gradient(700px 340px at 12% 18%, rgba(43, 143, 212, 0.10), transparent 70%),
+    radial-gradient(700px 340px at 12% 18%, rgba(0, 137, 255, 0.12), transparent 70%),
     radial-gradient(800px 420px at 88% 82%, rgba(208, 26, 53, 0.05), transparent 70%),
     var(--bg);
 }
@@ -111,7 +111,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
   cursor: pointer; width: 100%;
 }
 .side-link .ico { font-size: 1.05rem; width: 1.5rem; text-align: center; flex: none; }
-.side-link:hover { background: #101f38; color: var(--text); }
+.side-link:hover { background: #232a75; color: var(--text); }
 .side-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
 .side-section { font-size: 0.62rem; letter-spacing: 0.14em; color: var(--muted); font-weight: 700; margin: 1.4rem 0 0.4rem; padding: 0 0.8rem; }
 .side-foot { margin-top: auto; padding: 0.8rem 0.6rem 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.5rem; }
@@ -205,7 +205,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .rmarker.edge-r { transform: translateX(-100%); }
 .rcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.3rem; }
 .rvalue { font-weight: 700; color: var(--text); }
-.src-badge { font-size: 0.72rem; color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(43, 143, 212, 0.35); border-radius: 999px; padding: 0.15rem 0.6rem; white-space: nowrap; }
+.src-badge { font-size: 0.72rem; color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(0, 137, 255, 0.35); border-radius: 999px; padding: 0.15rem 0.6rem; white-space: nowrap; }
 .ai-panel { margin-top: 1.2rem; background: var(--card-soft); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 10px; padding: 1rem 1.2rem; }
 .ai-panel h3 { margin: 0 0 0.5rem; color: var(--accent); font-size: 0.95rem; }
 .ai-panel p { margin: 0; font-size: 0.93rem; white-space: pre-wrap; }
@@ -245,7 +245,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .chat-meta-row { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted); }
 .chat-time { font-size: 0.72rem; color: var(--muted); }
 .chat-sources { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
-.src-chip { font-size: 0.72rem; color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(43, 143, 212, 0.35); border-radius: 999px; padding: 0.12rem 0.6rem; }
+.src-chip { font-size: 0.72rem; color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(0, 137, 255, 0.35); border-radius: 999px; padding: 0.12rem 0.6rem; }
 .speak-btn { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 0.25rem 0.6rem; font-size: 0.78rem; cursor: pointer; }
 .speak-btn:hover { color: var(--accent); border-color: var(--accent); }
 .chat-warn { font-size: 0.78rem; color: var(--amber); margin-top: 0.5rem; }
@@ -329,7 +329,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 /* ---- Modal ---- */
 .modal {
   position: fixed; inset: 0; z-index: 60;
-  background: rgba(2, 8, 20, 0.7);
+  background: rgba(8, 10, 40, 0.7);
   display: flex; align-items: center; justify-content: center;
   padding: 20px;
 }

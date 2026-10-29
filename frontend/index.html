@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BloodIQ — Lab Intelligence</title>
-  <link rel="icon" type="image/png" href="logo.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <title>LabIQ — Lab Intelligence</title>
+  <link rel="icon" type="image/png" href="logo.png?v=20261029-labiq1" />
+  <link rel="stylesheet" href="styles.css?v=20261029-labiq1" />
 </head>
 <body>
   <!-- Shown until the patient logs in. -->
@@ -13,24 +13,24 @@
     <div class="auth-split">
       <div class="auth-brand">
         <div class="brand-lockup">
-          <img src="logo.png" alt="BloodIQ logo" class="brand-logo" />
+          <img src="logo.png?v=20261029-labiq1" alt="LabIQ logo" class="brand-logo" />
           <div>
-            <div class="brand-name">Blood<span class="blue">IQ</span></div>
+            <div class="brand-name">Lab<span class="blue">IQ</span></div>
             <div class="brand-tag">LAB INTELLIGENCE</div>
           </div>
         </div>
         <h1>Your lab results,<br /><span class="blue">made easy to understand.</span></h1>
-        <p class="muted">Add a blood report and get a clear, patient-friendly breakdown — what's in range, what's worth a look, and how things change over time.</p>
+        <p class="muted">Add a lab report and get a clear, patient-friendly breakdown — what's in range, what's worth a look, and how things change over time.</p>
         <ul class="brand-checks">
           <li>Plain-language summaries</li>
           <li>Trends and report comparisons</li>
-          <li>Ask BloodIQ anything about your results</li>
+          <li>Ask LabIQ anything about your results</li>
         </ul>
       </div>
       <div class="auth-portal">
         <section class="card portal-card">
           <p class="portal-kicker">PATIENT PORTAL</p>
-          <h2>Welcome to BloodIQ</h2>
+          <h2>Welcome to LabIQ</h2>
           <p class="muted">Sign in to your secure account.</p>
           <div class="auth-tabs">
             <button type="button" id="tab-login" class="auth-tab active">Log in</button>
@@ -71,9 +71,9 @@
   <div class="app-shell hidden" id="app-view">
     <aside class="sidebar">
       <div class="side-brand">
-        <img src="logo.png" alt="BloodIQ logo" class="side-logo" />
+        <img src="logo.png?v=20261029-labiq1" alt="LabIQ logo" class="side-logo" />
         <div>
-          <div class="side-name">Blood<span class="blue">IQ</span></div>
+          <div class="side-name">Lab<span class="blue">IQ</span></div>
           <div class="side-tag">LAB INTELLIGENCE</div>
         </div>
       </div>
@@ -82,7 +82,7 @@
         <button type="button" class="side-link" data-tab="results"><span class="ico">🧪</span><span class="lbl">My results</span></button>
         <button type="button" class="side-link" data-tab="trends"><span class="ico">📈</span><span class="lbl">Trends</span></button>
         <button type="button" class="side-link" data-tab="compare"><span class="ico">📊</span><span class="lbl">Compare</span></button>
-        <button type="button" class="side-link" data-tab="ask"><span class="ico">💬</span><span class="lbl">Ask BloodIQ</span></button>
+        <button type="button" class="side-link" data-tab="ask"><span class="ico">💬</span><span class="lbl">Ask LabIQ</span></button>
         <button type="button" class="side-link" data-tab="upload"><span class="ico">➕</span><span class="lbl">Add a report</span></button>
       </nav>
       <p class="side-section">ACCOUNT</p>
@@ -105,8 +105,8 @@
     </div>
 
     <section class="card tab-panel hero-card" data-panel="dashboard" data-requires="empty" id="dash-empty">
-      <h2 id="dash-greeting">Welcome to BloodIQ</h2>
-      <p class="muted">Add your first blood report to see a clear summary of your results.</p>
+      <h2 id="dash-greeting">Welcome to LabIQ</h2>
+      <p class="muted">Add your first lab report to see a clear summary of your results.</p>
       <button id="empty-add-btn" type="button">Add a new report</button>
     </section>
 
@@ -136,7 +136,7 @@
 
     <section class="card tab-panel" id="upload-card" data-panel="upload">
       <h2>Add a report</h2>
-      <p class="muted">Upload a PDF or a photo of your blood report. Digital PDFs, scanned PDFs, and photos all work.</p>
+      <p class="muted">Upload a PDF or a photo of your lab report. Digital PDFs, scanned PDFs, and photos all work.</p>
       <form id="upload-form">
         <label class="field-label" for="upload-member">Whose report is this?</label>
         <select id="upload-member" class="member-select"></select>
@@ -221,7 +221,7 @@
       <p><strong>Email:</strong> <span id="profile-email"></span></p>
       <p class="muted small">Your reports and chat stay private to this account.</p>
       <h3 class="section-head">Family profiles</h3>
-      <p class="muted small">Track blood reports for family members under this account. Each profile keeps its own reports, trends, and chat history.</p>
+      <p class="muted small">Track lab reports for family members under this account. Each profile keeps its own reports, trends, and chat history.</p>
       <ul id="family-list" class="family-list"></ul>
       <button id="family-add-btn" type="button" class="secondary">+ Add family member</button>
       <div class="profile-logout-row"><button id="profile-logout-btn" type="button" class="secondary">Log out</button></div>
@@ -230,8 +230,8 @@
     <section class="card tab-panel" id="chat-card" data-panel="ask">
       <div class="chat-head">
         <div>
-          <h2>Ask BloodIQ</h2>
-          <p class="muted">Ask anything about your blood reports in plain language.</p>
+          <h2>Ask LabIQ</h2>
+          <p class="muted">Ask anything about your lab reports in plain language.</p>
         </div>
         <button id="chat-clear" type="button" class="secondary small-btn" title="Clear this conversation">Clear</button>
       </div>
@@ -242,8 +242,8 @@
       <p id="chat-mode-desc" class="muted small"></p>
       <div id="chat-log" class="chat-log" aria-live="polite">
         <div id="chat-welcome" class="chat-welcome">
-          <div class="chat-welcome-avatar"><img src="logo.png" alt="BloodIQ" /></div>
-          <p><strong>Hi, I'm BloodIQ.</strong><br />Ask me about any of your results — what a test means, why a value was flagged, or how it changed over time.</p>
+          <div class="chat-welcome-avatar"><img src="logo.png?v=20261029-labiq1" alt="LabIQ" /></div>
+          <p><strong>Hi, I'm LabIQ.</strong><br />Ask me about any of your results — what a test means, why a value was flagged, or how it changed over time.</p>
           <div class="chat-suggest">
             <button type="button">Why is my hemoglobin low?</button>
             <button type="button">Explain my cholesterol results</button>
@@ -261,7 +261,7 @@
     </section>
 
     <footer class="disclaimer">
-      BloodIQ is educational and is <strong>not a substitute for professional
+      LabIQ is educational and is <strong>not a substitute for professional
       medical advice</strong>. Ranges shown are the ones printed on
       each lab report — always confirm with your report and check with your doctor.
     </footer>
@@ -297,6 +297,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20261014-fam1"></script>
+  <script src="app.js?v=20261029-labiq1"></script>
 </body>
 </html>

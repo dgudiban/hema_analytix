@@ -1,9 +1,9 @@
-/* BloodIQ frontend — plain JS, no build step. */
+/* LabIQ frontend — plain JS, no build step. */
 const API = ""; // same origin; the backend serves this page
 
 const $ = (id) => document.getElementById(id);
 
-const TOKEN_KEY = "bloodiq_token";
+const TOKEN_KEY = "labiq_token";
 let currentUser = null;
 let lastAiExplanation = null;
 let lastReportId = null;
@@ -677,7 +677,7 @@ function drawCompare(data) {
     : ((r.b_value - r.a_value) / Math.abs(r.a_value)) * 100;
   rows.sort((x, y) => Math.abs(pct(y)) - Math.abs(pct(x)));
   const top = rows.slice(0, 12);
-  const C_A = "#5b7a99", C_B = "#2b8fd4";
+  const C_A = "#8b93c9", C_B = "#0089ff";
   // legend
   ctx.font = "12px system-ui";
   ctx.fillStyle = C_A; ctx.fillRect(8, 8, 14, 10);
@@ -855,7 +855,7 @@ function drawTrend(trend) {
     });
   };
   if (trendChartType === "line" && pts.length > 1) {
-    ctx.strokeStyle = "#2b8fd4";
+    ctx.strokeStyle = "#0089ff";
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     pts.forEach((p, i) => {
@@ -866,7 +866,7 @@ function drawTrend(trend) {
     pts.forEach((p) => {
       ctx.fillStyle = STATUS_FILL[p.status] || "#64748b";
       ctx.beginPath(); ctx.arc(xs(pts.indexOf(p)), ys(p.value), 5, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "#0a1628"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = "#101651"; ctx.lineWidth = 2; ctx.stroke();
     });
     drawLabels();
   } else {
@@ -985,7 +985,7 @@ function addChatBubble(role, text, opts = {}) {
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
   if (role === "user") { avatar.textContent = "👤"; }
-  else { avatar.innerHTML = '<img src="logo.png" alt="BloodIQ" />'; }
+  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq1" alt="LabIQ" />'; }
   msg.appendChild(avatar);
 
   const body = document.createElement("div");
@@ -1048,7 +1048,7 @@ function addThinking() {
   msg.className = "chat-msg assistant";
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
-  avatar.innerHTML = '<img src="logo.png" alt="BloodIQ" />';
+  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq1" alt="LabIQ" />';
   msg.appendChild(avatar);
   const body = document.createElement("div");
   body.className = "chat-body";
@@ -1317,7 +1317,7 @@ initAuth();
 
 
 /* ---------------- Family profiles ---------------- */
-const MEMBER_KEY = "bloodiq_member";
+const MEMBER_KEY = "labiq_member";
 let familyMembers = [];
 let selectedMemberId = null; // null = the account owner ("Me")
 let editingMemberId = null;

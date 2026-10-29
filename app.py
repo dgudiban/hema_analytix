@@ -1,6 +1,6 @@
 """Hugging Face Spaces entrypoint (Gradio SDK, free tier).
 
-Runs the BloodIQ FastAPI app under uvicorn on port 7860. A minimal Gradio
+Runs the LabIQ FastAPI app under uvicorn on port 7860. A minimal Gradio
 interface is mounted at /gradio so the Space satisfies the Gradio SDK
 contract; the product UI (static frontend) is served by FastAPI at /.
 
@@ -37,14 +37,14 @@ def _gradio_status() -> str:
     startup). The function itself is a trivial status check; the product UI
     and API are served by the FastAPI app.
     """
-    return "BloodIQ API is running. The full app UI is served at the Space root (/)."
+    return "LabIQ API is running. The full app UI is served at the Space root (/)."
 
 
 demo = gr.Interface(
     fn=_gradio_status,
     inputs=[],
     outputs="text",
-    title="BloodIQ",
+    title="LabIQ",
     description="AI blood report analysis. Use the main page for uploads and chat.",
 )
 

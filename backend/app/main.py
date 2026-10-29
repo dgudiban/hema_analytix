@@ -1,4 +1,4 @@
-"""BloodIQ FastAPI application.
+"""LabIQ FastAPI application.
 
 API routes live under /api. The static frontend (frontend/) is served at /.
 
@@ -22,7 +22,7 @@ Base.metadata.create_all(bind=engine)
 # Backfill columns added after older databases were created.
 ensure_columns()
 
-app = FastAPI(title="BloodIQ", version="1.0.0")
+app = FastAPI(title="LabIQ", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
