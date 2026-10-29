@@ -683,7 +683,13 @@ async function runCompare(e) {
     const node = (s, cls) => `<div class="tl-node"><span class="tl-node-dot ${cls}"></span><div><strong>${s.report_date ? fmtShortDate(s.report_date) : "?"}</strong><span class="muted">${escapeHtml(fmtSide(s))}</span></div></div>`;
     $("compare-title").innerHTML =
       `<div class="tl-journey">${node(data.a, "earlier")}<div class="tl-line"></div>${node(data.b, "later")}</div>` +
-      `<p class="muted small">Biggest changes first. Hollow dot = first report, blue dot = second report, green band = healthy range.</p>`;
+      `<div class="tl-legend">` +
+      `<span class="tl-legend-item"><span class="tl-dot earlier"></span>${data.a.report_date ? fmtShortDate(data.a.report_date) : "First report"}</span>` +
+      `<span class="tl-legend-item"><span class="tl-dot later"></span>${data.b.report_date ? fmtShortDate(data.b.report_date) : "Second report"}</span>` +
+      `<span class="tl-legend-item"><span class="tl-swatch below"></span>Below range</span>` +
+      `<span class="tl-legend-item"><span class="tl-swatch ok"></span>Healthy range</span>` +
+      `<span class="tl-legend-item"><span class="tl-swatch above"></span>Above range</span>` +
+      `</div>`;
     drawCompare(data);
     resEl.classList.remove("hidden");
   } catch {
@@ -737,19 +743,27 @@ function drawCompare(data) {
     const pad = (max - min) * 0.12 || 1;
     min -= pad; max += pad;
     const pos = (v) => Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100));
-    let band = "";
+    // Traffic-light zones: yellow below the printed range, green inside
+    // it, red above it — the same colors as the status pills, so the bar
+    // reads at a glance. One-sided ranges get two zones; no range means
+    // a plain track.
+    let zones = "";
     if (lo != null && hi != null && hi > lo) {
-      band = `<div class="tl-band" style="left:${pos(lo)}%;width:${pos(hi) - pos(lo)}%"></div>`;
+      zones = `<div class="tl-zone below" style="left:0;width:${pos(lo)}%"></div>` +
+        `<div class="tl-zone ok" style="left:${pos(lo)}%;width:${pos(hi) - pos(lo)}%"></div>` +
+        `<div class="tl-zone above" style="left:${pos(hi)}%;width:${100 - pos(hi)}%"></div>`;
     } else if (lo != null) {
-      band = `<div class="tl-band" style="left:${pos(lo)}%;width:${100 - pos(lo)}%"></div>`;
+      zones = `<div class="tl-zone below" style="left:0;width:${pos(lo)}%"></div>` +
+        `<div class="tl-zone ok" style="left:${pos(lo)}%;width:${100 - pos(lo)}%"></div>`;
     } else if (hi != null) {
-      band = `<div class="tl-band" style="left:0%;width:${pos(hi)}%"></div>`;
+      zones = `<div class="tl-zone ok" style="left:0;width:${pos(hi)}%"></div>` +
+        `<div class="tl-zone above" style="left:${pos(hi)}%;width:${100 - pos(hi)}%"></div>`;
     }
     const dot = (value, status, cls, labelCls) => value == null ? "" :
       `<span class="tl-dot ${cls}" style="left:${pos(value)}%" title="${value} ${escapeHtml(r.unit || "")}"></span>` +
       `<span class="tl-label ${labelCls}" style="left:${pos(value)}%"><strong>${value}</strong> ${pillHTML(status)}</span>`;
     const rt = rangeText(lo, hi);
-    return `<div class="tl-track-wrap"><div class="tl-track">${band}` +
+    return `<div class="tl-track-wrap"><div class="tl-track"><div class="tl-zones">${zones}</div>` +
       dot(r.a_value, r.a_status, "earlier", "above") +
       dot(r.b_value, r.b_status, "later", "below") +
       `</div>${rt ? `<div class="tl-range muted">Healthy range: ${escapeHtml(rt)} ${escapeHtml(r.unit || "")}</div>` : ""}</div>`;
@@ -757,10 +771,23 @@ function drawCompare(data) {
   const rowHTML = (r) => {
     const p = pct(r);
     const arrow = p > 0 ? "↑" : p < 0 ? "↓" : "→";
-    const v = verdict(r);
-    const delta = r.a_value != null && r.b_value != null
-      ? `<strong>${arrow} ${Math.abs(p).toFixed(0)}%</strong>${v ? ` · ${v}` : ""}`
-      : (r.a_value == null ? "Only in the second report" : "Only in the first report");
+    // Displayed change stays inside 0–100; a "+" marks a move that really
+    // ran past 100% (sorting still uses the true change).
+    const pctText = `${Math.min(Math.abs(p), 100).toFixed(0)}${Math.abs(p) > 100 ? "+" : ""}%`;
+    let delta;
+    if (r.a_value != null && r.b_value != null) {
+      // Abnormal → Normal is an improvement: green arrow, plain word.
+      // The arrow points the way the value actually moved (down for
+      // HbA1c, up for B12) — green is what says it got better.
+      if (r.change !== "same" && abnormal(r.a_status) && r.b_status === "NORMAL") {
+        delta = `<strong><span class="tl-arrow improved">${arrow}</span> ${pctText} · Improved</strong>`;
+      } else {
+        const v = verdict(r);
+        delta = `<strong>${arrow} ${pctText}</strong>${v ? ` · ${v}` : ""}`;
+      }
+    } else {
+      delta = r.a_value == null ? "Only in the second report" : "Only in the first report";
+    }
     return `<div class="tl-row">
       <div class="tl-name">${escapeHtml(r.standard_name)} <span class="muted">${escapeHtml(r.unit || "")}</span></div>
       ${trackHTML(r)}
@@ -1040,7 +1067,7 @@ function addChatBubble(role, text, opts = {}) {
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
   if (role === "user") { avatar.textContent = "👤"; }
-  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq3" alt="LabIQ" />'; }
+  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq4" alt="LabIQ" />'; }
   msg.appendChild(avatar);
 
   const body = document.createElement("div");
@@ -1103,7 +1130,7 @@ function addThinking() {
   msg.className = "chat-msg assistant";
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
-  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq3" alt="LabIQ" />';
+  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq4" alt="LabIQ" />';
   msg.appendChild(avatar);
   const body = document.createElement("div");
   body.className = "chat-body";
