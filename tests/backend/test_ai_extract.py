@@ -455,3 +455,64 @@ def test_match_biomarker_test2_variants_against_real_spec():
     assert parse_service.match_biomarker("LDL/HDL Ratio", real) is None
     assert parse_service.match_biomarker("CHOL/HDL Ratio", real) is None
     assert parse_service.match_biomarker("LDL", real)["standard_name"] == "LDL"
+
+
+# ---- parallel two-bucket extraction ----
+
+
+@pytest.fixture(autouse=True)
+def _no_pacing(monkeypatch):
+    """Pacing gates are real sleeps; tests run them at zero."""
+    monkeypatch.setattr(ai_extract_service, "MODEL_PACING_SECONDS", 0)
+    ai_extract_service._model_last_call.clear()
+
+
+def _long_text(n_chunks: int) -> str:
+    # Each line block is one chunk's worth of distinct text (~4500 chars).
+    block = ("Hemoglobin\ng/dL\n13.0 - 16.5\n14.5\n" * 140)[:4400]
+    return "\n".join(f"{block}\n# chunk {i}" for i in range(n_chunks))
+
+
+def test_chunks_alternate_primary_model():
+    primaries = []
+
+    def fake_complete(prompt, system="", max_tokens=1024, model_order=None):
+        primaries.append((model_order or [None])[0])
+        return _ai_json(
+            [{"test": "Hemoglobin", "value": 14.5, "unit": "g/dL",
+              "ref_low": 13.0, "ref_high": 16.5, "flag": None}]
+        )
+
+    with patch.object(
+        ai_extract_service.llm_client, "complete", side_effect=fake_complete
+    ):
+        out, source = ai_extract_service.extract(_long_text(4), SPEC)
+    assert source == "ai"
+    assert primaries == [
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+    ]
+
+
+def test_chunks_run_on_two_workers():
+    import threading
+    import time as _time
+
+    threads = set()
+
+    def fake_complete(prompt, system="", max_tokens=1024, model_order=None):
+        threads.add(threading.current_thread().name)
+        _time.sleep(0.2)
+        return _ai_json(
+            [{"test": "Hemoglobin", "value": 14.5, "unit": "g/dL",
+              "ref_low": 13.0, "ref_high": 16.5, "flag": None}]
+        )
+
+    with patch.object(
+        ai_extract_service.llm_client, "complete", side_effect=fake_complete
+    ):
+        out, source = ai_extract_service.extract(_long_text(4), SPEC)
+    assert source == "ai"
+    assert len(threads) >= 2

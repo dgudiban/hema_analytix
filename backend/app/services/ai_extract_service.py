@@ -31,7 +31,9 @@ import json
 import logging
 import os
 import re
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from app.services import llm_client, parse_service
 
@@ -41,10 +43,36 @@ logger = logging.getLogger(__name__)
 # row-dense chunk's JSON fits comfortably in the output cap.
 CHUNK_CHARS = 4500
 MAX_ROWS_PER_CHUNK = 120
-# Pacing between chunk calls keeps a long report under the free-tier
-# tokens-per-minute budget instead of bursting all chunks at once.
-# ~3.7k input+output tokens per chunk / 30s ~= 7.4k TPM, inside the 8k window.
-CHUNK_DELAY_SECONDS = 30
+# Pacing is PER MODEL, not between chunks: Groq's free-tier TPM budget
+# (~8k) applies per model, and ~3.7k input+output tokens per chunk / 30s
+# ~= 7.4k TPM fits inside it. Two workers pinned to different models can
+# therefore run in parallel while each bucket keeps its 30s cadence —
+# roughly halving wall time for a long report instead of serializing every
+# chunk through one bucket.
+MODEL_PACING_SECONDS = 30
+# Transcription needs no 120B-scale reasoning, so 20b is the primary bucket
+# (its own 200k/day quota pool); 120b is the fallback. Chunks alternate
+# their primary so both buckets share the work.
+_MODEL_PREFERENCE = ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]
+_model_locks: dict[str, threading.Lock] = {}
+_model_last_call: dict[str, float] = {}
+_model_state_lock = threading.Lock()
+
+
+def _wait_for_model_pacing(model: str) -> None:
+    """Block until MODEL_PACING_SECONDS have passed since this model's last call.
+
+    Each model gets its own lock, so the two buckets proceed in parallel
+    while neither is ever called faster than its TPM budget allows.
+    """
+    with _model_state_lock:
+        lock = _model_locks.setdefault(model, threading.Lock())
+    with lock:
+        now = time.monotonic()
+        wait = MODEL_PACING_SECONDS - (now - _model_last_call.get(model, 0.0))
+        if wait > 0:
+            time.sleep(wait)
+        _model_last_call[model] = time.monotonic()
 # Dense chunks (CBC + metabolic panels) can exceed 1k tokens of JSON; a
 # truncated reply parses as bad_json and loses the whole chunk, so the cap
 # leaves real headroom while the smaller chunks keep TPM burn flat.
@@ -196,7 +224,9 @@ def _validate_row(row: dict, chunk: str, spec: list[dict]) -> dict | None:
     }
 
 
-def _complete_with_retry(prompt: str, retry: bool) -> tuple[str | None, str | None]:
+def _complete_with_retry(
+    prompt: str, retry: bool, model_order: list[str] | None = None
+) -> tuple[str | None, str | None]:
     """Call the LLM, retrying silent failures (incl. TPM rate limits).
 
     The client surfaces every backend failure as (None, None), so retries are
@@ -205,10 +235,11 @@ def _complete_with_retry(prompt: str, retry: bool) -> tuple[str | None, str | No
     already proven the backend unreachable — the remaining chunks then fail
     fast instead of each burning minutes of backoff).
 
-    Extraction prefers gpt-oss-20b: transcription needs no 120B-scale
-    reasoning, and its separate 200k/day quota pool gives the token-heavy
-    chunk workload headroom while gpt-oss-120b's daily quota is spent.
+    The first attempt is paced per primary model (see _wait_for_model_pacing);
+    retries already sleep 20s/40s, so they are not gated again.
     """
+    order = model_order or _MODEL_PREFERENCE
+    _wait_for_model_pacing(order[0])
     delays = (0,) + _CHUNK_RETRY_DELAYS if retry else (0,)
     for attempt, wait in enumerate(delays):
         if wait:
@@ -222,7 +253,7 @@ def _complete_with_retry(prompt: str, retry: bool) -> tuple[str | None, str | No
             prompt,
             _SYSTEM,
             max_tokens=EXTRACTION_MAX_TOKENS,
-            model_order=["openai/gpt-oss-20b", "openai/gpt-oss-120b"],
+            model_order=order,
         )
         if text:
             return text, model
@@ -230,7 +261,8 @@ def _complete_with_retry(prompt: str, retry: bool) -> tuple[str | None, str | No
 
 
 def _transcribe_chunk(
-    chunk: str, spec: list[dict], retry: bool = True
+    chunk: str, spec: list[dict], retry: bool = True,
+    model_order: list[str] | None = None,
 ) -> tuple[list[dict], bool, str | None]:
     """Transcribe one chunk. Returns (rows, failed, fail_reason).
 
@@ -241,7 +273,7 @@ def _transcribe_chunk(
     """
     names = ", ".join(bm["standard_name"] for bm in spec)
     prompt = _PROMPT_TEMPLATE.format(names=names, text=chunk[: CHUNK_CHARS + 500])
-    text, model = _complete_with_retry(prompt, retry)
+    text, model = _complete_with_retry(prompt, retry, model_order)
     if not text:
         reason = getattr(llm_client, "last_error", None) or "unknown"
         logger.warning("AI extraction: chunk failed after retries (%s)", reason)
@@ -251,7 +283,7 @@ def _transcribe_chunk(
         # One fresh sample: an unparseable reply is usually a one-off glitch,
         # and a single extra call is cheaper than losing the whole chunk.
         logger.warning("AI extraction: unparseable JSON from %s; resampling once", model)
-        text, model = _complete_with_retry(prompt, False)
+        text, model = _complete_with_retry(prompt, False, model_order)
         data = _extract_json(text) if text else None
     if not data:
         logger.warning("AI extraction: chunk still unparseable after resample")
@@ -294,31 +326,61 @@ def extract(text: str, spec: list[dict]) -> tuple[list[dict], str]:
     global last_run
     if ai_enabled() and text and text.strip():
         try:
+            chunks = _chunk_text(text)
+            # Two workers, each pinned to a different model bucket: chunk i
+            # prefers model i%2, so the 20b and 120b TPM budgets are spent in
+            # parallel while each bucket keeps its own 30s cadence (enforced
+            # by _wait_for_model_pacing). A chunk that fails after retries
+            # sets backend_dead so later chunks fail fast to the rule parser
+            # instead of each burning minutes of backoff — except bad_json,
+            # which is a per-chunk content problem, not backend health.
+            backend_dead = threading.Event()
+
+            def work(i: int, chunk: str) -> tuple[list[dict], bool, str | None]:
+                order = (
+                    _MODEL_PREFERENCE
+                    if i % 2 == 0
+                    else list(reversed(_MODEL_PREFERENCE))
+                )
+                try:
+                    rows, failed, reason = _transcribe_chunk(
+                        chunk, spec, retry=not backend_dead.is_set(),
+                        model_order=order,
+                    )
+                except Exception:
+                    logger.exception("AI extraction: chunk %d raised", i)
+                    rows, failed, reason = [], True, "exception"
+                if failed:
+                    if reason != "bad_json":
+                        backend_dead.set()
+                    return (
+                        parse_service.parse_text(chunk, spec),
+                        True,
+                        reason or "unknown",
+                    )
+                return rows, False, None
+
+            results: list[tuple[list[dict], bool, str | None]] = []
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                results = list(
+                    pool.map(lambda t: work(*t), enumerate(chunks))
+                )
             merged: dict[str, dict] = {}
             ai_rows = 0
             ai_chunks = 0
             failed_chunks = 0
             fail_reasons: list[str] = []
-            retry = True
-            chunks = _chunk_text(text)
-            for i, chunk in enumerate(chunks):
-                if i:
-                    time.sleep(CHUNK_DELAY_SECONDS)
-                rows, failed, reason = _transcribe_chunk(chunk, spec, retry=retry)
+            for rows, failed, reason in results:
                 if failed:
                     failed_chunks += 1
                     fail_reasons.append(reason or "unknown")
-                    # The backend already proved unreachable for one chunk;
-                    # don't burn minutes of backoff on every remaining one.
-                    retry = False
-                    for row in parse_service.parse_text(chunk, spec):
-                        merged.setdefault(row["biomarker_id"], row)
-                    continue
-                ai_chunks += 1
+                else:
+                    ai_chunks += 1
                 for row in rows:
                     if row["biomarker_id"] not in merged:
                         merged[row["biomarker_id"]] = row
-                        ai_rows += 1
+                        if not failed:
+                            ai_rows += 1
             last_run = {
                 "chunks": len(chunks),
                 "ai_chunks": ai_chunks,
