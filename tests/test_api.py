@@ -212,6 +212,13 @@ def test_compare_reports(upload_dir):
     assert by_name["Hemoglobin"]["change"] == "up"
     assert by_name["Hemoglobin"]["a_value"] == pytest.approx(11.2)
     assert by_name["Hemoglobin"]["b_value"] == pytest.approx(13.0)
+    # Per-side printed ranges ride along for the timeline's healthy band.
+    assert by_name["Hemoglobin"]["a_ref_low"] == pytest.approx(12.0)
+    assert by_name["Hemoglobin"]["a_ref_high"] == pytest.approx(15.5)
+    assert by_name["Hemoglobin"]["b_ref_low"] == pytest.approx(12.0)
+    assert by_name["Hemoglobin"]["b_ref_high"] == pytest.approx(15.5)
+    assert by_name["Total Cholesterol"]["b_ref_low"] is None
+    assert by_name["Total Cholesterol"]["b_ref_high"] is None
     assert by_name["Total Cholesterol"]["change"] == "missing"
     assert by_name["Total Cholesterol"]["b_value"] is None
     assert "Vitamin D" not in by_name  # dropped: no printed range on report B

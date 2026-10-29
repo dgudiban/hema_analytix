@@ -132,6 +132,11 @@ class CompareRow(BaseModel):
     b_value: float | None = None
     a_status: str | None = None
     b_status: str | None = None
+    # Per-side printed ranges, for the timeline's healthy band.
+    a_ref_low: float | None = None
+    a_ref_high: float | None = None
+    b_ref_low: float | None = None
+    b_ref_high: float | None = None
     # "up" | "down" | "same" | "new" | "missing" — direction only, never
     # presented as better/worse.
     change: str

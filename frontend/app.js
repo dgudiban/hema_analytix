@@ -679,9 +679,11 @@ async function runCompare(e) {
     const res = await api(`/api/reports/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
     if (!res.ok) throw new Error("compare failed");
     const data = await res.json();
-    const fmtSide = (s) => `#${s.id} ${s.filename}${s.report_date ? ` · ${fmtShortDate(s.report_date)}` : ""}`;
-    $("compare-title").textContent =
-      `Comparing ${fmtSide(data.a)} with ${fmtSide(data.b)} — biggest changes first.`;
+    const fmtSide = (s) => `#${s.id} ${s.filename}`;
+    const node = (s, cls) => `<div class="tl-node"><span class="tl-node-dot ${cls}"></span><div><strong>${s.report_date ? fmtShortDate(s.report_date) : "?"}</strong><span class="muted">${escapeHtml(fmtSide(s))}</span></div></div>`;
+    $("compare-title").innerHTML =
+      `<div class="tl-journey">${node(data.a, "earlier")}<div class="tl-line"></div>${node(data.b, "later")}</div>` +
+      `<p class="muted small">Biggest changes first. Hollow dot = first report, blue dot = second report, green band = healthy range.</p>`;
     drawCompare(data);
     resEl.classList.remove("hidden");
   } catch {
@@ -692,10 +694,11 @@ async function runCompare(e) {
 }
 
 function drawCompare(data) {
-  // Readable rows instead of normalized canvas bars: every row shows the
-  // two values with their status pills, the percent change, and a plain
-  // verdict (back in range / moved out of range / still high …). Biggest
-  // changes first; unchanged tests tuck into a collapsible section.
+  // Concept 3 (Timeline, approved from the draft): the two reports sit on a
+  // journey line, and every test gets one track — a green healthy-range
+  // band, a hollow dot for the first report, a solid blue dot for the
+  // second. Biggest moves first; unchanged tests tuck into a collapsible
+  // section; tests present in only one report get a single-dot track.
   const el = $("compare-list");
   const pct = (r) => r.a_value === 0 ? (r.b_value === 0 ? 0 : 100)
     : ((r.b_value - r.a_value) / Math.abs(r.a_value)) * 100;
@@ -716,14 +719,52 @@ function drawCompare(data) {
     }
     return "";
   };
+  const bandFor = (r) => {
+    // Second report's printed range wins; first's is the fallback.
+    const lo = r.b_ref_low ?? r.a_ref_low;
+    const hi = r.b_ref_high ?? r.a_ref_high;
+    return { lo, hi };
+  };
+  const rangeText = (lo, hi) => lo != null && hi != null ? `${lo}–${hi}`
+    : lo != null ? `> ${lo}` : hi != null ? `< ${hi}` : "";
+  const trackHTML = (r) => {
+    const vals = [r.a_value, r.b_value].filter((v) => v != null);
+    const { lo, hi } = bandFor(r);
+    let min = Math.min(...vals), max = Math.max(...vals);
+    if (lo != null) min = Math.min(min, lo);
+    if (hi != null) max = Math.max(max, hi);
+    if (min === max) { min -= 1; max += 1; }
+    const pad = (max - min) * 0.12 || 1;
+    min -= pad; max += pad;
+    const pos = (v) => Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100));
+    let band = "";
+    if (lo != null && hi != null && hi > lo) {
+      band = `<div class="tl-band" style="left:${pos(lo)}%;width:${pos(hi) - pos(lo)}%"></div>`;
+    } else if (lo != null) {
+      band = `<div class="tl-band" style="left:${pos(lo)}%;width:${100 - pos(lo)}%"></div>`;
+    } else if (hi != null) {
+      band = `<div class="tl-band" style="left:0%;width:${pos(hi)}%"></div>`;
+    }
+    const dot = (value, status, cls, labelCls) => value == null ? "" :
+      `<span class="tl-dot ${cls}" style="left:${pos(value)}%" title="${value} ${escapeHtml(r.unit || "")}"></span>` +
+      `<span class="tl-label ${labelCls}" style="left:${pos(value)}%"><strong>${value}</strong> ${pillHTML(status)}</span>`;
+    const rt = rangeText(lo, hi);
+    return `<div class="tl-track-wrap"><div class="tl-track">${band}` +
+      dot(r.a_value, r.a_status, "earlier", "above") +
+      dot(r.b_value, r.b_status, "later", "below") +
+      `</div>${rt ? `<div class="tl-range muted">Healthy range: ${escapeHtml(rt)} ${escapeHtml(r.unit || "")}</div>` : ""}</div>`;
+  };
   const rowHTML = (r) => {
     const p = pct(r);
     const arrow = p > 0 ? "↑" : p < 0 ? "↓" : "→";
     const v = verdict(r);
-    return `<div class="cmp-row">
-      <div class="cmp-name">${escapeHtml(r.standard_name)} <span class="muted">${escapeHtml(r.unit || "")}</span></div>
-      <div class="cmp-vals"><span><strong>${r.a_value}</strong> ${pillHTML(r.a_status)}</span><span class="cmp-arrow">→</span><span><strong>${r.b_value}</strong> ${pillHTML(r.b_status)}</span></div>
-      <div class="cmp-delta"><strong>${arrow} ${Math.abs(p).toFixed(0)}%</strong>${v ? ` · ${v}` : ""}</div>
+    const delta = r.a_value != null && r.b_value != null
+      ? `<strong>${arrow} ${Math.abs(p).toFixed(0)}%</strong>${v ? ` · ${v}` : ""}`
+      : (r.a_value == null ? "Only in the second report" : "Only in the first report");
+    return `<div class="tl-row">
+      <div class="tl-name">${escapeHtml(r.standard_name)} <span class="muted">${escapeHtml(r.unit || "")}</span></div>
+      ${trackHTML(r)}
+      <div class="tl-delta">${delta}</div>
     </div>`;
   };
   const both = data.rows.filter((r) =>
@@ -744,13 +785,7 @@ function drawCompare(data) {
         + unchanged.map(rowHTML).join("") + `</details>`;
     }
     if (only.length) {
-      const onlyHTML = only.map((r) => {
-        const side = r.a_value == null
-          ? `Only in the second report: <strong>${r.b_value} ${escapeHtml(r.unit || "")}</strong>`
-          : `Only in the first report: <strong>${r.a_value} ${escapeHtml(r.unit || "")}</strong>`;
-        return `<div class="cmp-row"><div class="cmp-name">${escapeHtml(r.standard_name)} <span class="muted">${escapeHtml(r.unit || "")}</span></div><div class="cmp-delta">${side}</div></div>`;
-      }).join("");
-      html += `<h3 class="section-head">Only in one report</h3>` + onlyHTML;
+      html += `<h3 class="section-head">Only in one report</h3>` + only.map(rowHTML).join("");
     }
   }
   el.innerHTML = html;
@@ -1005,7 +1040,7 @@ function addChatBubble(role, text, opts = {}) {
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
   if (role === "user") { avatar.textContent = "👤"; }
-  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq2" alt="LabIQ" />'; }
+  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq3" alt="LabIQ" />'; }
   msg.appendChild(avatar);
 
   const body = document.createElement("div");
@@ -1068,7 +1103,7 @@ function addThinking() {
   msg.className = "chat-msg assistant";
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
-  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq2" alt="LabIQ" />';
+  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq3" alt="LabIQ" />';
   msg.appendChild(avatar);
   const body = document.createElement("div");
   body.className = "chat-body";

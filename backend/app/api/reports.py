@@ -265,6 +265,12 @@ def compare_reports(
                 "b_value": rb_r.value if rb_r else None,
                 "a_status": ra_r.status if ra_r else None,
                 "b_status": rb_r.status if rb_r else None,
+                # Per-side printed ranges, for the timeline's healthy band
+                # (second report's range wins, first's is the fallback).
+                "a_ref_low": ra_r.ref_low if ra_r else None,
+                "a_ref_high": ra_r.ref_high if ra_r else None,
+                "b_ref_low": rb_r.ref_low if rb_r else None,
+                "b_ref_high": rb_r.ref_high if rb_r else None,
                 "change": change,
             }
         )
