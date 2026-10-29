@@ -211,3 +211,46 @@ def test_chat_api_baseline(stub_llm):
 def test_chat_api_empty_message():
     res = client.post("/api/chat", json={"message": "  "}, headers=_headers())
     assert res.status_code == 200
+
+
+# ---- single ask box: general fallback when nothing grounds the question ----
+
+
+def test_general_fallback_no_context(stub_llm, monkeypatch):
+    from app.models.db import SessionLocal
+    from app.services import retrieval_service
+
+    monkeypatch.setattr(retrieval_service, "retrieve", lambda query, top_k=4: [])
+    db = SessionLocal()
+    try:
+        out = chat_service.answer_question(
+            "What is the capital of France?", db, report_id=None, user_id=None
+        )
+    finally:
+        db.close()
+    assert out["mode"] == "hybrid"
+    assert out["sources"] == []
+    assert "Hemoglobin carries oxygen" in out["answer"]
+    assert out["answer"].endswith(chat_service.DISCLAIMER)
+
+
+def test_general_fallback_uses_general_system_prompt(monkeypatch):
+    from app.models.db import SessionLocal
+    from app.services import llm_client, retrieval_service
+
+    seen = {}
+
+    def fake_complete(prompt, system=""):
+        seen["system"] = system
+        return ("General educational answer.", "stub-model")
+
+    monkeypatch.setattr(llm_client, "complete", fake_complete)
+    monkeypatch.setattr(retrieval_service, "retrieve", lambda query, top_k=4: [])
+    db = SessionLocal()
+    try:
+        chat_service.answer_question(
+            "What is the capital of France?", db, report_id=None, user_id=None
+        )
+    finally:
+        db.close()
+    assert seen["system"] == chat_service.GENERAL_SYSTEM

@@ -190,8 +190,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .chev { color: var(--muted); font-size: 0.8rem; }
 .pill { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em; border-radius: 999px; padding: 0.22rem 0.7rem; white-space: nowrap; }
 .pill.below { color: var(--amber); background: var(--amber-soft); border: 1px solid rgba(245, 179, 1, 0.4); }
+.pill.low { color: var(--amber); background: var(--amber-soft); border: 1px solid rgba(245, 179, 1, 0.4); }
 .pill.normal { color: var(--green); background: var(--green-soft); border: 1px solid rgba(34, 197, 94, 0.4); }
 .pill.above { color: var(--red); background: var(--red-soft); border: 1px solid rgba(208, 26, 53, 0.45); }
+.pill.high { color: var(--red); background: var(--red-soft); border: 1px solid rgba(208, 26, 53, 0.45); }
 .bio-row-detail { padding: 0 0.9rem 0.9rem; }
 .row-detail-line { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
 /* range bar */
@@ -348,3 +350,15 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
   font-size: 14px;
 }
 .modal-actions { margin-top: 14px; }
+
+/* compare: readable rows instead of canvas bars */
+.cmp-row { display: grid; grid-template-columns: 1.2fr 1.4fr 1fr; gap: 12px; align-items: center; padding: 10px 12px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-soft); }
+.cmp-name { font-weight: 600; }
+.cmp-vals { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cmp-arrow { color: var(--muted); }
+.cmp-delta { color: var(--muted); font-size: 0.9rem; }
+.cmp-details { margin-top: 12px; }
+.cmp-details summary { cursor: pointer; color: var(--muted); margin-bottom: 8px; }
+@media (max-width: 640px) {
+  .cmp-row { grid-template-columns: 1fr; }
+}

@@ -52,6 +52,17 @@ BASELINE_SYSTEM = (
     "advise the user to consult a healthcare professional."
 )
 
+# General answers for the single ask box when a question has no grounding in
+# the patient's reports and no knowledge excerpt matches. Same guardrails as
+# the baseline, kept separate so the grounded path stays strict.
+GENERAL_SYSTEM = (
+    "You are LabIQ's educational assistant. Answer general questions about "
+    "lab tests and health in plain, friendly language. This is educational "
+    "information, not medical advice. Never diagnose conditions, prescribe "
+    "medication, recommend treatments or dosages, or give emergency "
+    "guidance; advise the user to consult a healthcare professional."
+)
+
 _FALLBACK_NO_LLM = (
     "The AI backend is unavailable right now (no GROQ_API_KEY and no local "
     "Ollama server). Below are your deterministic results and the curated "
@@ -206,6 +217,25 @@ def answer_question(
 
     query = message + " " + " ".join(b["standard_name"] for b in mentioned)
     hits = retrieval_service.retrieve(query, top_k=4)
+
+    # One ask box for everything: when the question has no grounding in the
+    # patient's results and no knowledge excerpt matches, answer it as a
+    # general educational question instead of refusing for lack of context.
+    if not used_ids and not hits:
+        text, model = llm_client.complete(message, GENERAL_SYSTEM)
+        if text is None:
+            text = (
+                "The AI backend is unavailable right now (no GROQ_API_KEY "
+                "and no local Ollama server)."
+            )
+        return {
+            "answer": f"{text.strip()}\n\n{DISCLAIMER}",
+            "model": model,
+            "mode": "hybrid",
+            "sources": [],
+            "used_biomarker_ids": [],
+            "numbers_grounded": True,  # vacuous: no patient numbers used
+        }
 
     prompt = build_hybrid_prompt(message, patient_facts, hits, history)
     text, model = llm_client.complete(prompt, HYBRID_SYSTEM)

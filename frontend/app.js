@@ -144,6 +144,16 @@ async function checkHealth() {
   }
 }
 
+/* ISO date ("2023-02-20") -> "Feb 20, 2023". Always includes the year;
+never renders month-day only, which hid which year a report was from. */
+function fmtShortDate(iso) {
+  if (!iso) return "?";
+  const parts = String(iso).split("-").map(Number);
+  if (parts.length !== 3 || !parts[0]) return String(iso);
+  return new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1)
+    .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 function fmtRange(r) {
   if (r.ref_low == null && r.ref_high == null) return "—";
   if (r.ref_low == null) return `< ${r.ref_high}`;
@@ -229,7 +239,24 @@ function rangeIndicatorHTML(r) {
   const hi = r.ref_high;
   const v = r.value;
   if (lo == null && hi == null) {
-    return `<div class="range-bar none"><span class="muted">No reference range printed — position can't be shown.</span></div>`;
+    // No range printed (e.g. HbA1c on some reports): no bar at all, and a
+    // plain-words note instead of "position can't be shown".
+    const flagNote = r.flag
+      ? ` What we do know: the lab flagged this one as <strong>${escapeHtml(r.flag)}</strong>.`
+      : "";
+    return `<div class="range-bar none"><span class="muted">No bar here — this report doesn't print a reference range for this test, so there's nothing to place your value against.${flagNote}</span></div>`;
+  }
+  // The lab's own flag is authoritative. If the printed range contradicts
+  // the flag (a mis-associated range from a scrambled report layout), a
+  // positional bar would point at the wrong zone — show the flag and the
+  // printed range as text instead of a lying bar.
+  const flagStatus = ({ High: "HIGH", H: "HIGH", Low: "LOW", L: "LOW", Normal: "NORMAL", N: "NORMAL" })[r.flag] || null;
+  let rangeStatus = null;
+  if (lo != null && hi != null) rangeStatus = v < lo ? "LOW" : v > hi ? "HIGH" : "NORMAL";
+  else if (lo != null) rangeStatus = v < lo ? "LOW" : "NORMAL";
+  else rangeStatus = v > hi ? "HIGH" : "NORMAL";
+  if (flagStatus && rangeStatus && flagStatus !== rangeStatus) {
+    return `<div class="range-bar none"><span><strong>Lab flagged: ${escapeHtml(r.flag)}</strong> — the lab's own verdict, and that's what counts here.</span> <span class="muted">The range printed on this report (${escapeHtml(fmtRange(r))} ${escapeHtml(r.unit)}) doesn't match that flag, so no bar is shown rather than a misleading one.</span></div>`;
   }
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
   let d0, d1, zones;
@@ -582,7 +609,7 @@ async function loadHistory() {
       const li = document.createElement("li");
       const link = document.createElement("a");
       link.href = "#";
-      const when = r.report_date ? ` · ${r.report_date}` : "";
+      const when = r.report_date ? ` · ${fmtShortDate(r.report_date)}` : "";
       link.textContent = `#${r.id} ${r.filename}${when} (${r.result_count} results)`;
       if (idx === 0) {
         const badge = document.createElement("span");
@@ -626,7 +653,7 @@ async function loadCompareReports() {
     const reports = (await res.json()).slice().sort((x, y) => x.id - y.id);
     aSel.innerHTML = ""; bSel.innerHTML = "";
     for (const r of reports) {
-      const label = `#${r.id} ${r.filename}${r.report_date ? ` · ${r.report_date}` : ""} (${r.result_count})`;
+      const label = `#${r.id} ${r.filename}${r.report_date ? ` · ${fmtShortDate(r.report_date)}` : ""} (${r.result_count})`;
       aSel.appendChild(new Option(label, r.id));
       bSel.appendChild(new Option(label, r.id));
     }
@@ -652,9 +679,9 @@ async function runCompare(e) {
     const res = await api(`/api/reports/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
     if (!res.ok) throw new Error("compare failed");
     const data = await res.json();
-    const fmtSide = (s) => `#${s.id} ${s.filename}${s.report_date ? ` · ${s.report_date}` : ""}`;
+    const fmtSide = (s) => `#${s.id} ${s.filename}${s.report_date ? ` · ${fmtShortDate(s.report_date)}` : ""}`;
     $("compare-title").textContent =
-      `Comparing ${fmtSide(data.a)} (earlier) with ${fmtSide(data.b)} (later) — biggest movers first.`;
+      `Comparing ${fmtSide(data.a)} with ${fmtSide(data.b)} — biggest changes first.`;
     drawCompare(data);
     resEl.classList.remove("hidden");
   } catch {
@@ -665,53 +692,68 @@ async function runCompare(e) {
 }
 
 function drawCompare(data) {
-  // One glanceable chart: horizontal paired bars per biomarker, each pair
-  // normalized to its own max (tests have different units). Biggest movers first.
-  const canvas = $("compare-chart");
-  const ctx = canvas.getContext("2d");
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-  const rows = data.rows.filter((r) =>
-    r.a_value != null && r.b_value != null && isFinite(r.a_value) && isFinite(r.b_value));
+  // Readable rows instead of normalized canvas bars: every row shows the
+  // two values with their status pills, the percent change, and a plain
+  // verdict (back in range / moved out of range / still high …). Biggest
+  // changes first; unchanged tests tuck into a collapsible section.
+  const el = $("compare-list");
   const pct = (r) => r.a_value === 0 ? (r.b_value === 0 ? 0 : 100)
     : ((r.b_value - r.a_value) / Math.abs(r.a_value)) * 100;
-  rows.sort((x, y) => Math.abs(pct(y)) - Math.abs(pct(x)));
-  const top = rows.slice(0, 12);
-  const C_A = "#8b93c9", C_B = "#0089ff";
-  // legend
-  ctx.font = "12px system-ui";
-  ctx.fillStyle = C_A; ctx.fillRect(8, 8, 14, 10);
-  ctx.fillStyle = "#8fa3bd"; ctx.fillText("Earlier", 28, 17);
-  ctx.fillStyle = C_B; ctx.fillRect(100, 8, 14, 10);
-  ctx.fillStyle = "#8fa3bd"; ctx.fillText("Later", 120, 17);
-  if (!top.length) {
-    ctx.fillStyle = "#8fa3bd";
-    ctx.fillText("No overlapping tests to compare.", 8, 44);
-    return;
+  const abnormal = (s) => s === "LOW" || s === "HIGH";
+  const pillHTML = (status) => status
+    ? `<span class="pill ${status.toLowerCase()}">${STATUS_LABEL[status] || status}</span>` : "";
+  const verdict = (r) => {
+    if (r.change === "same") return "No change";
+    if (r.a_status && r.b_status) {
+      if (abnormal(r.a_status) && r.b_status === "NORMAL") return "Back in range";
+      if (r.a_status === "NORMAL" && abnormal(r.b_status)) return "Moved out of range";
+      if (abnormal(r.a_status) && abnormal(r.b_status)) {
+        return r.a_status === r.b_status
+          ? `Still ${r.b_status.toLowerCase()}`
+          : `Changed from ${r.a_status.toLowerCase()} to ${r.b_status.toLowerCase()}`;
+      }
+      return "Still in range";
+    }
+    return "";
+  };
+  const rowHTML = (r) => {
+    const p = pct(r);
+    const arrow = p > 0 ? "↑" : p < 0 ? "↓" : "→";
+    const v = verdict(r);
+    return `<div class="cmp-row">
+      <div class="cmp-name">${escapeHtml(r.standard_name)} <span class="muted">${escapeHtml(r.unit || "")}</span></div>
+      <div class="cmp-vals"><span><strong>${r.a_value}</strong> ${pillHTML(r.a_status)}</span><span class="cmp-arrow">→</span><span><strong>${r.b_value}</strong> ${pillHTML(r.b_status)}</span></div>
+      <div class="cmp-delta"><strong>${arrow} ${Math.abs(p).toFixed(0)}%</strong>${v ? ` · ${v}` : ""}</div>
+    </div>`;
+  };
+  const both = data.rows.filter((r) =>
+    r.a_value != null && r.b_value != null && isFinite(r.a_value) && isFinite(r.b_value));
+  const only = data.rows.filter((r) => r.a_value == null || r.b_value == null);
+  both.sort((x, y) => Math.abs(pct(y)) - Math.abs(pct(x)));
+  const changed = both.filter((r) => r.change !== "same");
+  const unchanged = both.filter((r) => r.change === "same");
+  let html = "";
+  if (!both.length && !only.length) {
+    html = `<p class="muted">No overlapping tests to compare.</p>`;
+  } else {
+    if (changed.length) {
+      html += `<h3 class="section-head">Changed — biggest moves first</h3>` + changed.map(rowHTML).join("");
+    }
+    if (unchanged.length) {
+      html += `<details class="cmp-details"><summary>${unchanged.length} test${unchanged.length === 1 ? "" : "s"} unchanged — show</summary>`
+        + unchanged.map(rowHTML).join("") + `</details>`;
+    }
+    if (only.length) {
+      const onlyHTML = only.map((r) => {
+        const side = r.a_value == null
+          ? `Only in the second report: <strong>${r.b_value} ${escapeHtml(r.unit || "")}</strong>`
+          : `Only in the first report: <strong>${r.a_value} ${escapeHtml(r.unit || "")}</strong>`;
+        return `<div class="cmp-row"><div class="cmp-name">${escapeHtml(r.standard_name)} <span class="muted">${escapeHtml(r.unit || "")}</span></div><div class="cmp-delta">${side}</div></div>`;
+      }).join("");
+      html += `<h3 class="section-head">Only in one report</h3>` + onlyHTML;
+    }
   }
-  const labelW = 150, padR = 76, padT = 30;
-  const rowH = Math.min(46, (H - padT - 12) / top.length);
-  const maxW = W - labelW - padR;
-  top.forEach((r, i) => {
-    const y = padT + i * rowH;
-    const mid = y + rowH / 2;
-    const mx = Math.max(Math.abs(r.a_value), Math.abs(r.b_value), 1e-9);
-    const wa = (Math.abs(r.a_value) / mx) * maxW;
-    const wb = (Math.abs(r.b_value) / mx) * maxW;
-    const name = r.standard_name.length > 24 ? r.standard_name.slice(0, 23) + "…" : r.standard_name;
-    ctx.fillStyle = "#e9eff8";
-    ctx.font = "12px system-ui";
-    ctx.fillText(name, 6, mid + 4);
-    const bh = 9, gapB = 4;
-    ctx.fillStyle = C_A;
-    ctx.fillRect(labelW, mid - bh - gapB / 2, Math.max(2, wa), bh);
-    ctx.fillStyle = C_B;
-    ctx.fillRect(labelW, mid + gapB / 2, Math.max(2, wb), bh);
-    ctx.fillStyle = "#8fa3bd";
-    ctx.font = "11px system-ui";
-    ctx.fillText(`${r.a_value}`, labelW + wa + 6, mid - 3);
-    ctx.fillText(`${r.b_value} ${r.unit || ""}`, labelW + wb + 6, mid + 12);
-  });
+  el.innerHTML = html;
 }
 
 async function loadBiomarkers() {
@@ -847,8 +889,9 @@ function drawTrend(trend) {
       ctx.fillStyle = "#e9eff8";
       ctx.fillText(String(p.value), xs(i) - 10, ys(p.value) - 10);
       ctx.fillStyle = "#94a3b8";
-      const label = (p.report_date || "").slice(5) || "?";
-      ctx.fillText(label, xs(i) - 14, H - 26);
+      // Full date with year: "Feb 20, 2023" — the date printed on the
+      // report, not the upload date. Never month-day only.
+      ctx.fillText(fmtShortDate(p.report_date), xs(i) - 14, H - 26);
       const rng = p.ref_low != null && p.ref_high != null ? `${p.ref_low}–${p.ref_high}`
         : p.ref_high != null ? `<${p.ref_high}` : p.ref_low != null ? `>${p.ref_low}` : "no range";
       ctx.fillText(rng, xs(i) - 20, H - 10);
@@ -904,29 +947,6 @@ $("trend-chart").addEventListener("click", (e) => {
 /* ---- Chat ---- */
 
 const chatHistory = [];
-
-const CHAT_MODE_DESC = {
-  hybrid: "Answers use your reports plus curated knowledge — numbers come from your results.",
-  baseline: "General answers from the AI alone, without your report data (for comparison).",
-};
-
-function chatMode() {
-  const el = document.querySelector('.chat-mode [data-mode].active');
-  return el ? el.dataset.mode : "hybrid";
-}
-
-function updateModeDesc() {
-  $("chat-mode-desc").textContent = CHAT_MODE_DESC[chatMode()] || "";
-}
-
-document.querySelectorAll(".chat-mode [data-mode]").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".chat-mode [data-mode]").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    updateModeDesc();
-  });
-});
-updateModeDesc();
 
 function chatTimestamp() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -985,7 +1005,7 @@ function addChatBubble(role, text, opts = {}) {
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
   if (role === "user") { avatar.textContent = "👤"; }
-  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq1" alt="LabIQ" />'; }
+  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq2" alt="LabIQ" />'; }
   msg.appendChild(avatar);
 
   const body = document.createElement("div");
@@ -1048,7 +1068,7 @@ function addThinking() {
   msg.className = "chat-msg assistant";
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
-  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq1" alt="LabIQ" />';
+  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq2" alt="LabIQ" />';
   msg.appendChild(avatar);
   const body = document.createElement("div");
   body.className = "chat-body";
@@ -1068,18 +1088,13 @@ async function sendChatMessage(message) {
   addChatBubble("user", message);
   chatHistory.push({ role: "user", content: message });
 
-  const mode = chatMode();
   const thinking = addThinking();
 
   try {
-    const url = mode === "baseline" ? `${API}/api/chat/baseline` : `${API}/api/chat`;
-    const body = mode === "baseline"
-      ? { message }
-      : { message, report_id: lastReportId, history: chatHistory.slice(0, -1), member_id: selectedMemberId };
-    const res = await api(url, {
+    const res = await api(`${API}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ message, report_id: lastReportId, history: chatHistory.slice(0, -1), member_id: selectedMemberId }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
@@ -1087,9 +1102,6 @@ async function sendChatMessage(message) {
     const sources = (data.sources || []).map((s) => s.title).filter(Boolean);
     addChatBubble("assistant", data.answer, { sources, grounded: data.numbers_grounded });
     chatHistory.push({ role: "assistant", content: data.answer });
-    $("chat-meta").textContent =
-      (data.model ? `model: ${data.model}` : "model: unavailable") +
-      (mode === "hybrid" ? " · grounded in your reports" : " · AI only");
   } catch (err) {
     thinking.remove();
     addChatBubble("assistant", `Sorry — I couldn't get an answer (${err.message}). Please try again.`);
@@ -1113,7 +1125,6 @@ function clearChat() {
   log.querySelectorAll(".chat-msg").forEach((m) => m.remove());
   const w = $("chat-welcome");
   if (w) w.hidden = false;
-  $("chat-meta").textContent = "";
   log.scrollTop = 0;
 }
 
@@ -1188,17 +1199,38 @@ function toggleMic() {
   }
   recognizer = new SR();
   recognizer.lang = "en-US";
-  recognizer.interimResults = false;
+  // Interim results stay ON so the user sees live feedback, but they are
+  // never appended: each result index contributes exactly once — its final
+  // transcript, or its last interim if the session ends without a final.
+  // (Appending every result event produced "Sum Summar Summarize …".)
+  recognizer.interimResults = true;
+  recognizer.continuous = false;
   recognizer.maxAlternatives = 1;
-  const mic = $("chat-mic");
+  const input = $("chat-input");
+  const base = input.value;
+  const finals = {}; // resultIndex -> final transcript
+  let preview = "", previewIndex = -1;
+  const render = () => {
+    const parts = Object.keys(finals).sort((a, b) => a - b).map((i) => finals[i]);
+    if (previewIndex >= 0 && !(previewIndex in finals) && preview) parts.push(preview);
+    input.value = [base, parts.join(" ").trim()].filter(Boolean).join(" ");
+  };
   recognizer.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    const input = $("chat-input");
-    input.value = (input.value ? input.value + " " : "") + transcript;
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i];
+      if (r.isFinal) {
+        finals[i] = r[0].transcript.trim();
+        if (previewIndex === i) { preview = ""; previewIndex = -1; }
+      } else {
+        preview = r[0].transcript.trim();
+        previewIndex = i;
+      }
+    }
+    render();
     input.focus();
   };
   recognizer.onerror = () => setMicState(false);
-  recognizer.onend = () => setMicState(false);
+  recognizer.onend = () => { render(); setMicState(false); };
   recognizer.start();
   setMicState(true);
 }

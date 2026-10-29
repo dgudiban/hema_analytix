@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LabIQ — Lab Intelligence</title>
-  <link rel="icon" type="image/png" href="logo.png?v=20261029-labiq1" />
-  <link rel="stylesheet" href="styles.css?v=20261029-labiq1" />
+  <link rel="icon" type="image/png" href="logo.png?v=20261029-labiq2" />
+  <link rel="stylesheet" href="styles.css?v=20261029-labiq2" />
 </head>
 <body>
   <!-- Shown until the patient logs in. -->
@@ -13,7 +13,7 @@
     <div class="auth-split">
       <div class="auth-brand">
         <div class="brand-lockup">
-          <img src="logo.png?v=20261029-labiq1" alt="LabIQ logo" class="brand-logo" />
+          <img src="logo.png?v=20261029-labiq2" alt="LabIQ logo" class="brand-logo" />
           <div>
             <div class="brand-name">Lab<span class="blue">IQ</span></div>
             <div class="brand-tag">LAB INTELLIGENCE</div>
@@ -71,7 +71,7 @@
   <div class="app-shell hidden" id="app-view">
     <aside class="sidebar">
       <div class="side-brand">
-        <img src="logo.png?v=20261029-labiq1" alt="LabIQ logo" class="side-logo" />
+        <img src="logo.png?v=20261029-labiq2" alt="LabIQ logo" class="side-logo" />
         <div>
           <div class="side-name">Lab<span class="blue">IQ</span></div>
           <div class="side-tag">LAB INTELLIGENCE</div>
@@ -189,6 +189,7 @@
         <div class="trend-stats" id="trend-stats"></div>
         <p id="trend-direction" class="trend-direction"></p>
         <canvas id="trend-chart" width="680" height="280"></canvas>
+        <p class="muted small">Dates under the bars are the dates printed on your reports (collection date when shown) — not the dates you uploaded them.</p>
         <p id="trend-note" class="muted small"></p>
       </div>
       <p id="trend-empty" class="muted">No trend data yet — add at least one report first.</p>
@@ -198,14 +199,13 @@
       <h2>Compare</h2>
       <p class="muted">Pick two reports to see how your results changed.</p>
       <form id="compare-form">
-        <select id="compare-a" aria-label="Earlier report"></select>
-        <select id="compare-b" aria-label="Later report"></select>
+        <select id="compare-a" aria-label="First report"></select>
+        <select id="compare-b" aria-label="Second report"></select>
         <button type="submit" class="secondary">Compare</button>
       </form>
       <div id="compare-result" class="hidden">
         <p id="compare-title" class="muted small"></p>
-        <canvas id="compare-chart" width="680" height="340"></canvas>
-        <p class="muted small">Each pair of bars is one test — the lighter bar is the earlier report, the blue bar the later one.</p>
+        <div id="compare-list"></div>
       </div>
       <p id="compare-empty" class="muted">Add at least two reports to compare them.</p>
     </section>
@@ -235,14 +235,10 @@
         </div>
         <button id="chat-clear" type="button" class="secondary small-btn" title="Clear this conversation">Clear</button>
       </div>
-      <div class="chat-mode segmented" role="group" aria-label="Answer mode">
-        <button type="button" data-mode="hybrid" class="active">📊 My reports</button>
-        <button type="button" data-mode="baseline">🤖 AI only</button>
-      </div>
-      <p id="chat-mode-desc" class="muted small"></p>
+      <p class="muted small">Ask anything — answers use your reports when they're relevant, and general knowledge otherwise.</p>
       <div id="chat-log" class="chat-log" aria-live="polite">
         <div id="chat-welcome" class="chat-welcome">
-          <div class="chat-welcome-avatar"><img src="logo.png?v=20261029-labiq1" alt="LabIQ" /></div>
+          <div class="chat-welcome-avatar"><img src="logo.png?v=20261029-labiq2" alt="LabIQ" /></div>
           <p><strong>Hi, I'm LabIQ.</strong><br />Ask me about any of your results — what a test means, why a value was flagged, or how it changed over time.</p>
           <div class="chat-suggest">
             <button type="button">Why is my hemoglobin low?</button>
@@ -257,7 +253,6 @@
         <button type="submit" id="chat-send" title="Send">➤</button>
       </form>
       <p id="voice-note" class="muted small" hidden></p>
-      <p id="chat-meta" class="muted small"></p>
     </section>
 
     <footer class="disclaimer">
@@ -297,6 +292,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20261029-labiq1"></script>
+  <script src="app.js?v=20261029-labiq2"></script>
 </body>
 </html>

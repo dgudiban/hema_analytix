@@ -135,7 +135,9 @@ def analyze_report(
     summary = analysis_service.summarize(
         analyzed, interpretation=parse_service.extract_interpretation(report.raw_text or "")
     )
-    ai_explanation = ai_service.explain_report(analyzed, summary)
+    ai_explanation = ai_service.ensure_closing_line(
+        ai_service.explain_report(analyzed, summary)
+    )
 
     return {
         "report_id": report.id,
