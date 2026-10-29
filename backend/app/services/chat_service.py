@@ -31,6 +31,37 @@ DISCLAIMER = (
     "lab results."
 )
 
+
+def _strip_disclaimer(text: str) -> str:
+    """Drop model-written disclaimer lines from the end of an answer.
+
+    The model often ends its answer with the short disclaimer sentence
+    itself, and the code below appends the full DISCLAIMER — which showed
+    the same statement twice. Only trailing lines are stripped, so a
+    disclaimer mentioned mid-answer is left alone.
+    """
+    short = (
+        "labiq is educational and is not a substitute for professional "
+        "medical advice"
+    )
+    consult = (
+        "always consult a qualified healthcare professional about your "
+        "lab results"
+    )
+
+    def norm(line: str) -> str:
+        s = line.strip().strip("*_# ").strip().lower().rstrip(".")
+        return " ".join(s.split()).replace("bloodiq", "labiq")
+
+    lines = text.strip().split("\n")
+    while lines:
+        n = norm(lines[-1])
+        if n in (short, consult, f"{short}. {consult}"):
+            lines.pop()
+            continue
+        break
+    return "\n".join(lines).rstrip()
+
 HYBRID_SYSTEM = (
     "You are LabIQ's educational assistant. Answer the user's question "
     "using ONLY the PATIENT DATA and KNOWLEDGE excerpts provided below. "
@@ -237,7 +268,7 @@ def answer_question(
                 "and no local Ollama server)."
             )
         return {
-            "answer": f"{text.strip()}\n\n{DISCLAIMER}",
+            "answer": f"{_strip_disclaimer(text)}\n\n{DISCLAIMER}",
             "model": model,
             "mode": "hybrid",
             "sources": [],
@@ -256,7 +287,7 @@ def answer_question(
         )
         text = f"{_FALLBACK_NO_LLM}\n\n{patient_facts}{kb_part}"
 
-    answer = f"{text.strip()}\n\n{DISCLAIMER}"
+    answer = f"{_strip_disclaimer(text)}\n\n{DISCLAIMER}"
     return {
         "answer": answer,
         "model": model,
@@ -285,7 +316,7 @@ def answer_baseline(message: str) -> dict:
             "local Ollama server)."
         )
     return {
-        "answer": f"{text.strip()}\n\n{DISCLAIMER}",
+        "answer": f"{_strip_disclaimer(text)}\n\n{DISCLAIMER}",
         "model": model,
         "mode": "baseline",
         "sources": [],

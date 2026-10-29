@@ -254,3 +254,27 @@ def test_general_fallback_uses_general_system_prompt(monkeypatch):
     finally:
         db.close()
     assert seen["system"] == chat_service.GENERAL_SYSTEM
+
+
+def test_strip_disclaimer():
+    # Model-written short sentence is dropped so the appended DISCLAIMER
+    # below is the only copy.
+    assert chat_service._strip_disclaimer(
+        "Hello.\n\nLabIQ is educational and is not a substitute for "
+        "professional medical advice."
+    ) == "Hello."
+    # Combined single line (short + consult) is dropped too.
+    assert chat_service._strip_disclaimer(
+        "Hello.\n\nLabIQ is educational and is not a substitute for "
+        "professional medical advice. Always consult a qualified healthcare "
+        "professional about your lab results."
+    ) == "Hello."
+    # Old product name variant is dropped too.
+    assert chat_service._strip_disclaimer(
+        "Hello.\n\nBloodIQ is educational and is not a substitute for "
+        "professional medical advice."
+    ) == "Hello."
+    # Mid-answer mentions and unrelated text are untouched.
+    assert chat_service._strip_disclaimer(
+        "LabIQ is educational, so ask your doctor.\n\nMore detail here."
+    ) == "LabIQ is educational, so ask your doctor.\n\nMore detail here."

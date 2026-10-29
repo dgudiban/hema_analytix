@@ -47,6 +47,7 @@ async function showApp(user) {
   loadProfile();
   switchTab("dashboard");
   await refreshProfileData();
+  restoreChat();
 }
 
 function logout() {
@@ -1069,8 +1070,37 @@ function hideWelcome() {
   if (w) w.hidden = true;
 }
 
+/* The model sometimes emits markdown tables and <br> tags even though the
+   prompts forbid them, and the chat renderer has no table support — so raw
+   pipes and tags used to show up literally. Clean them deterministically:
+   tables become plain bullet lines, <br> becomes a line break, stray HTML
+   tags and stray pipes are dropped. Safe to run on already-clean text. */
+function cleanChatText(text) {
+  let out = String(text || "").replace(/<br\s*\/?>/gi, "\n");
+  out = out.replace(/<[^>]*>/g, "");
+  const rawLines = out.split("\n");
+  const lines = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    const t = rawLines[i].trim();
+    if (!t) { lines.push(""); continue; }
+    if (/^\|[\s:|-]*\|$/.test(t)) continue; // table separator row
+    if (t.startsWith("|")) {
+      // Table header row (followed by a separator) carries no data.
+      const next = (rawLines[i + 1] || "").trim();
+      if (/^\|[\s:|-]*\|$/.test(next)) continue;
+      const cells = t.split("|").map((c) => c.trim()).filter(Boolean);
+      if (!cells.length) continue;
+      lines.push("- " + cells.join(" — "));
+      continue;
+    }
+    lines.push(t.replace(/\s*\|$/, "").replace(/^\|\s*/, ""));
+  }
+  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 function addChatBubble(role, text, opts = {}) {
   hideWelcome();
+  if (role === "assistant") text = cleanChatText(text);
   const log = $("chat-log");
   const msg = document.createElement("div");
   msg.className = `chat-msg ${role}`;
@@ -1078,7 +1108,7 @@ function addChatBubble(role, text, opts = {}) {
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
   if (role === "user") { avatar.textContent = "👤"; }
-  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq5" alt="LabIQ" />'; }
+  else { avatar.innerHTML = '<img src="logo.png?v=20261029-labiq6" alt="LabIQ" />'; }
   msg.appendChild(avatar);
 
   const body = document.createElement("div");
@@ -1141,7 +1171,7 @@ function addThinking() {
   msg.className = "chat-msg assistant";
   const avatar = document.createElement("div");
   avatar.className = "chat-avatar";
-  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq5" alt="LabIQ" />';
+  avatar.innerHTML = '<img src="logo.png?v=20261029-labiq6" alt="LabIQ" />';
   msg.appendChild(avatar);
   const body = document.createElement("div");
   body.className = "chat-body";
@@ -1160,6 +1190,7 @@ async function sendChatMessage(message) {
   if (!message) return;
   addChatBubble("user", message);
   chatHistory.push({ role: "user", content: message });
+  saveChat();
 
   const thinking = addThinking();
 
@@ -1167,14 +1198,15 @@ async function sendChatMessage(message) {
     const res = await api(`${API}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, report_id: lastReportId, history: chatHistory.slice(0, -1), member_id: selectedMemberId }),
+      body: JSON.stringify({ message, report_id: lastReportId, history: chatHistory.slice(0, -1).map(({ role, content }) => ({ role, content })), member_id: selectedMemberId }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     thinking.remove();
     const sources = (data.sources || []).map((s) => s.title).filter(Boolean);
     addChatBubble("assistant", data.answer, { sources, grounded: data.numbers_grounded });
-    chatHistory.push({ role: "assistant", content: data.answer });
+    chatHistory.push({ role: "assistant", content: data.answer, sources, grounded: data.numbers_grounded });
+    saveChat();
   } catch (err) {
     thinking.remove();
     addChatBubble("assistant", `Sorry — I couldn't get an answer (${err.message}). Please try again.`);
@@ -1191,9 +1223,37 @@ function handleChat(e) {
   input.focus();
 }
 
+/* Chat survives logout/login and page reloads: it lives in localStorage
+   under the account's key, and only the Clear button removes it. Logout
+   deliberately does not touch this key. */
+const CHAT_KEY_PREFIX = "labiq_chat_";
+function chatStorageKey() {
+  const id = currentUser && (currentUser.email || currentUser.id);
+  return CHAT_KEY_PREFIX + (id || "default");
+}
+function saveChat() {
+  try {
+    localStorage.setItem(chatStorageKey(), JSON.stringify(chatHistory.slice(-50)));
+  } catch { /* storage full or blocked: chat still works in memory */ }
+}
+function restoreChat() {
+  const log = $("chat-log");
+  log.querySelectorAll(".chat-msg").forEach((m) => m.remove());
+  chatHistory.length = 0;
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem(chatStorageKey()) || "[]"); } catch { saved = []; }
+  if (!Array.isArray(saved)) return;
+  for (const m of saved) {
+    if (!m || typeof m.content !== "string") continue;
+    chatHistory.push({ role: m.role, content: m.content, sources: m.sources || [], grounded: m.grounded });
+    addChatBubble(m.role, m.content, { sources: m.sources || [], grounded: m.grounded });
+  }
+}
+
 function clearChat() {
   chatHistory.length = 0;
   stopSpeaking();
+  localStorage.removeItem(chatStorageKey());
   const log = $("chat-log");
   log.querySelectorAll(".chat-msg").forEach((m) => m.remove());
   const w = $("chat-welcome");
@@ -1549,7 +1609,8 @@ async function refreshProfileData() {
   lastResults = null;
   lastAiExplanation = null;
   dashboardHasData = false;
-  clearChat();
+  // NOTE: no clearChat() here — the conversation survives login and
+  // profile switches, and only the Clear button removes it.
   $("results-groups").innerHTML = "";
   $("ai-panel").classList.add("hidden");
   await loadHistory();
